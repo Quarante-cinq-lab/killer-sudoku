@@ -1,4 +1,4 @@
-import { ALL_DIGITS, popcount, singleDigit } from './bits';
+import { ALL_DIGITS, highestDigit, lowestDigit, popcount, singleDigit } from './bits';
 import { combinationsFor } from './combinations';
 import { CELL_COUNT, cageIndexByCell, cellAt, PEERS, UNITS, validatePuzzle, type Puzzle } from './model';
 
@@ -118,8 +118,6 @@ function prepare(puzzle: Puzzle): SumConstraint[] {
   return constraints;
 }
 
-const lowestDigit = (mask: number): number => 32 - Math.clz32(mask & -mask);
-const highestDigit = (mask: number): number => 32 - Math.clz32(mask);
 /** Masque des chiffres compris entre lo et hi (inclus). */
 const rangeMask = (lo: number, hi: number): number =>
   lo > hi ? 0 : (ALL_DIGITS >> (9 - hi)) & ~((1 << (lo - 1)) - 1) & ALL_DIGITS;

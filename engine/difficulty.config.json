@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "notes": [
+    "Paramètres de difficulté (cahier des charges, section 5). Modifiables sans toucher au code.",
+    "techniques : le solveur logique les essaie dans l'ordre de cette liste ; points = points par étape.",
+    "rule45MaxCells : taille maximale des sommes déduites de la règle des 45.",
+    "levels.<NIVEAU>.conditions : liste d'alternatives ; une grille remplit le niveau si l'une d'elles est vraie.",
+    "  Chaque alternative associe un groupe (A, B, C, D) ou une technique à [minimum, maximum] d'étapes (null = sans limite).",
+    "levels.<NIVEAU>.score : [minimum, maximum] du score total (null = sans limite). Valeurs provisoires, fixées à l'étape 3.",
+    "levels.<NIVEAU>.cages : contraintes de forme des cages pour ce niveau.",
+    "On retient le niveau le plus élevé dont les conditions sont remplies."
+  ],
+  "techniques": {
+    "naked_single": { "group": "A", "points": 1 },
+    "hidden_single": { "group": "A", "points": 1 },
+    "cage_combination": { "group": "A", "points": 2 },
+    "rule45_single": { "group": "A", "points": 3 },
+    "pointing": { "group": "A", "points": 3 },
+    "box_line": { "group": "A", "points": 3 },
+    "cage_unit_overlap": { "group": "A", "points": 3 },
+    "naked_pair": { "group": "A", "points": 3 },
+    "hidden_pair": { "group": "A", "points": 4 },
+    "naked_triple": { "group": "A", "points": 5 },
+    "hidden_triple": { "group": "A", "points": 5 },
+    "innies_outies_multi": { "group": "B", "points": 10 },
+    "cage_splitting": { "group": "B", "points": 15 },
+    "cage_comparison": { "group": "B", "points": 15 },
+    "parity": { "group": "B", "points": 15 },
+    "cross_cage_combinations": { "group": "B", "points": 20 },
+    "naked_quad": { "group": "B", "points": 20 },
+    "hidden_quad": { "group": "B", "points": 20 },
+    "x_wing": { "group": "B", "points": 20 },
+    "y_wing": { "group": "B", "points": 20 },
+    "xyz_wing": { "group": "B", "points": 25 },
+    "swordfish": { "group": "B", "points": 30 }
+  },
+  "rule45MaxCells": 5,
+  "bottleneck": { "enabled": true },
+  "levels": {
+    "HARD": {
+      "conditions": [{ "B": [0, 0], "C": [0, 0], "D": [0, 0], "rule45_single": [3, null] }],
+      "score": [null, null],
+      "cages": { "minSize": 1, "maxSize": 6, "maxSingleCell": 2, "maxUniqueCombo": 12 }
+    },
+    "EXPERT": {
+      "conditions": [{ "B": [2, null], "C": [0, 0], "D": [0, 0] }],
+      "score": [null, null],
+      "cages": { "minSize": 2, "maxSize": 6, "maxSingleCell": 0, "maxUniqueCombo": 9 }
+    },
+    "DIABOLIQUE": {
+      "conditions": [{ "C": [2, null], "D": [0, 0] }],
+      "score": [null, null],
+      "cages": { "minSize": 2, "maxSize": 6, "maxSingleCell": 0, "maxUniqueCombo": 7 }
+    },
+    "EXTREME": {
+      "conditions": [{ "D": [1, null] }, { "C": [5, null] }],
+      "score": [null, null],
+      "cages": { "minSize": 2, "maxSize": 6, "maxSingleCell": 0, "maxUniqueCombo": 6 }
+    },
+    "ULTIME": {
+      "conditions": [{ "D": [3, null] }],
+      "score": [null, null],
+      "cages": { "minSize": 2, "maxSize": 6, "maxSingleCell": 0, "maxUniqueCombo": 5 }
+    }
+  }
+}

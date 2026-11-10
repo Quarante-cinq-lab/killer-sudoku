@@ -18,7 +18,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "solve": "tsx scripts/solve.ts"
+    "solve": "tsx scripts/solve.ts",
+    "trace": "tsx scripts/trace.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

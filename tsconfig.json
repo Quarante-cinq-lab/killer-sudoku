@@ -17,5 +17,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["engine", "app", "scripts", "data", "*.ts"]
+  "include": ["engine", "app", "scripts", "data", "texts", "*.ts"]
 }

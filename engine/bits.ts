@@ -48,3 +48,17 @@ export function sumOfMask(mask: number): number {
   for (let d = 1; d <= 9; d++) if (mask & digitBit(d)) sum += d;
   return sum;
 }
+
+/** Plus petit chiffre du masque (0 si le masque est vide). */
+export function lowestDigit(mask: number): number {
+  return mask === 0 ? 0 : 32 - Math.clz32(mask & -mask);
+}
+
+/** Plus grand chiffre du masque (0 si le masque est vide). */
+export function highestDigit(mask: number): number {
+  return 32 - Math.clz32(mask);
+}
+
+/** Chiffres impairs et pairs. */
+export const ODD_DIGITS = 0b101010101;
+export const EVEN_DIGITS = 0b010101010;
