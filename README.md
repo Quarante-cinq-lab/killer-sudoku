@@ -144,7 +144,9 @@ Pour voir le raisonnement d'une grille de la banque : `npm run trace -- data/ban
 
 ## Installer l'application sur l'iPad
 
-L'application est publiée sur GitHub Pages (voir plus bas). Sur l'iPad :
+L'application est publiée sur GitHub Pages : **https://quarante-cinq-lab.github.io/killer-sudoku/**
+
+Sur l'iPad :
 
 1. Ouvrir **Safari** (pas un autre navigateur) à l'adresse de l'application.
 2. Toucher le bouton **Partager** (carré avec une flèche vers le haut), puis **Sur l'écran d'accueil**, puis
