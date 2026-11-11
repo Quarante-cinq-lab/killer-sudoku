@@ -101,6 +101,54 @@
     "swordfish": {
       "group": "B",
       "points": 30
+    },
+    "x_cycles": {
+      "group": "C",
+      "points": 40
+    },
+    "simple_coloring": {
+      "group": "C",
+      "points": 45
+    },
+    "xy_chain": {
+      "group": "C",
+      "points": 50
+    },
+    "wxyz_wing": {
+      "group": "C",
+      "points": 50
+    },
+    "jellyfish": {
+      "group": "C",
+      "points": 60
+    },
+    "aligned_pair_exclusion": {
+      "group": "C",
+      "points": 60
+    },
+    "medusa_3d": {
+      "group": "C",
+      "points": 80
+    },
+    "finned_x_wing": {
+      "group": "D",
+      "points": 100
+    },
+    "finned_swordfish": {
+      "group": "D",
+      "points": 110
+    },
+    "grouped_x_cycles": {
+      "group": "D",
+      "points": 120
+    },
+    "als_xz": {
+      "group": "D",
+      "points": 140
+    },
+    "aic": {
+      "group": "D",
+      "points": 150
     }
   },
   "rule45MaxCells": 5,

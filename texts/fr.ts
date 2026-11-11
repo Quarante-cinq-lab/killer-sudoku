@@ -130,6 +130,18 @@ export const TEXTS = {
     y_wing: 'Y-Wing',
     xyz_wing: 'XYZ-Wing',
     swordfish: 'Swordfish',
+    x_cycles: 'X-Cycles',
+    simple_coloring: 'Coloriage simple',
+    xy_chain: 'XY-Chain',
+    wxyz_wing: 'WXYZ-Wing',
+    jellyfish: 'Jellyfish',
+    aligned_pair_exclusion: 'Aligned Pair Exclusion',
+    medusa_3d: '3D Medusa',
+    finned_x_wing: 'X-Wing à aileron',
+    finned_swordfish: 'Swordfish à aileron',
+    grouped_x_cycles: 'X-Cycles groupés',
+    als_xz: 'Ensembles presque verrouillés (ALS)',
+    aic: 'Chaîne d’inférences alternées (AIC)',
   },
 
   /** Explication de chaque technique (2e niveau de l'indice). */
@@ -274,6 +286,29 @@ export const TEXTS = {
       'Comme un Y-Wing, mais le pivot a trois candidats : le chiffre commun est exclu des cases qui voient le pivot et les deux ailes.',
     swordfish:
       'Sur trois lignes (ou colonnes), ce chiffre n’a de place que dans les trois mêmes colonnes (ou lignes) : il est exclu du reste de ces colonnes (ou lignes).',
+    x_cycles:
+      'Pour un même chiffre, une chaîne alterne liens forts (seulement deux places possibles) et liens faibles (deux cases qui se voient) : l’une de ses deux extrémités vaut forcément ce chiffre, qui est exclu des cases voyant les deux.',
+    simple_coloring:
+      'On colorie en deux couleurs les places d’un chiffre reliées par des liens forts : une des deux couleurs est la bonne. Une case qui voit les deux couleurs ne peut pas contenir ce chiffre (ou une couleur se contredit et tombe).',
+    xy_chain:
+      'Une chaîne de cases à deux candidats, reliées par un chiffre commun : si la première ne vaut pas X, la dernière vaut X. Les cases qui voient les deux extrémités ne peuvent donc pas valoir X.',
+    wxyz_wing:
+      'Quatre cases se partagent quatre chiffres : un seul de ces chiffres peut se trouver dans des cases qui ne se voient pas. Il est exclu des cases qui voient toutes ses positions.',
+    jellyfish:
+      'Sur quatre lignes (ou colonnes), ce chiffre n’a de place que dans les quatre mêmes colonnes (ou lignes) : il est exclu du reste de ces colonnes (ou lignes).',
+    aligned_pair_exclusion:
+      'On essaie toutes les paires de chiffres pour deux cases qui se voient : celles qui videraient une case voisine (ou rendraient la cage impossible) sont exclues ; un chiffre qui n’apparaît plus dans aucune paire est retiré.',
+    medusa_3d:
+      'Coloriage en deux couleurs de tous les candidats reliés par des liens forts, entre cases et à l’intérieur des cases : une couleur qui se contredit tombe, et un candidat qui voit les deux couleurs est éliminé.',
+    finned_x_wing:
+      'Presque un X-Wing : quelques places en trop (l’aileron) sont dans un même bloc. Soit l’X-Wing tient, soit l’aileron est vrai : les cases qui voient l’aileron et l’X-Wing perdent le chiffre.',
+    finned_swordfish:
+      'Presque un Swordfish : quelques places en trop (l’aileron) sont dans un même bloc. Soit le Swordfish tient, soit l’aileron est vrai : les cases qui voient l’aileron et le Swordfish perdent le chiffre.',
+    grouped_x_cycles:
+      'Comme un X-Cycle, mais certains maillons sont des groupes de cases alignées dans un bloc : l’une des extrémités vaut le chiffre, exclu des cases qui voient les deux.',
+    als_xz:
+      'Deux groupes de N cases ont chacun N+1 candidats. Un chiffre commun X ne peut être que dans l’un des deux : l’autre groupe se verrouille, et un second chiffre commun Z est exclu des cases qui voient toutes ses positions.',
+    aic: 'Une chaîne alterne liens forts et liens faibles, entre cases et entre chiffres d’une même case : l’une de ses extrémités est forcément vraie, ce qui élimine les candidats qui les contredisent toutes les deux.',
   },
 
   hint: {
@@ -359,6 +394,8 @@ export const TEXTS = {
     placement: (cell: string, digit: number) => `${cell} = ${digit}`,
     elimination: (cell: string, digits: string) => `${cell} ≠ ${digits}`,
     combos: (list: string) => `combinaisons : ${list}`,
+    digitsZone: (digits: readonly number[]) =>
+      digits.length === 1 ? `chiffre ${digits[0]}` : `chiffres ${digits.join(', ')}`,
     line: (index: number, name: string, where: string, effect: string, points: number) =>
       `${String(index).padStart(3)}. ${name} — ${where} : ${effect}  [+${points}]`,
     solved: 'Grille résolue par déduction.',

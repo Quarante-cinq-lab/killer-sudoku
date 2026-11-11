@@ -189,9 +189,9 @@ describe('grille candidate', () => {
   it('indique les niveaux que le moteur sait produire', () => {
     expect(isLevelReachable('HARD')).toBe(true);
     expect(isLevelReachable('EXPERT')).toBe(true);
-    // Les groupes C et D ne sont pas encore programmés.
-    expect(isLevelReachable('DIABOLIQUE')).toBe(false);
-    expect(isLevelReachable('ULTIME')).toBe(false);
+    // Les groupes C et D sont programmés : tous les niveaux sont accessibles.
+    expect(isLevelReachable('DIABOLIQUE')).toBe(true);
+    expect(isLevelReachable('ULTIME')).toBe(true);
   });
 
   it('refuse un profil de génération mal formé', () => {

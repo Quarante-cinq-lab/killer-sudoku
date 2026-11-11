@@ -89,7 +89,13 @@ L'installation sur l'écran d'accueil et le mode hors ligne viendront à l'étap
     box/line, chevauchement cage/unité, paires et triplets nus ou cachés ;
   - groupe B : innies/outies de plusieurs cases, découpage de cage, comparaison innies/outies, parité,
     combinaisons croisées, quadruplets nus ou cachés, X-Wing, Y-Wing, XYZ-Wing, Swordfish.
-  - Les groupes C et D viendront avant la banque complète.
+  - groupe C : X-Cycles, coloriage simple, XY-Chain, WXYZ-Wing, Jellyfish, Aligned Pair Exclusion,
+    3D Medusa ;
+  - groupe D : X-Wing et Swordfish à aileron, X-Cycles groupés, ensembles presque verrouillés (ALS-XZ),
+    chaînes d'inférences alternées (AIC).
+- Les chaînes et le coloriage reposent sur des **liens** entre candidats (`engine/logic/links.ts`),
+  adaptés au killer : un chiffre obligatoire d'une cage qui n'y a que deux places forme un lien fort, et deux
+  chiffres d'une même cage qu'aucune combinaison ne réunit forment un lien faible (« lien de somme »).
 - Chaque étape est une donnée (technique, cases, chiffres posés ou retirés). `engine/logic/describe.ts`
   la met en phrase avec les textes de `texts/fr.ts` ; la même donnée servira aux indices.
 - La **notation** (`engine/rating.ts`) additionne les points des étapes et compte les points d'entrée

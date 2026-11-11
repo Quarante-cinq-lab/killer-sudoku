@@ -28,9 +28,9 @@ describe('configuration de la difficulté', () => {
     expect(DIFFICULTY_CONFIG.techniques.map((t) => t.id).sort()).toEqual([...TECHNIQUE_IDS].sort());
   });
 
-  it('essaie les techniques du groupe A avant celles du groupe B', () => {
+  it('essaie les techniques dans l’ordre des groupes : A, puis B, puis C, puis D', () => {
     const groups = DIFFICULTY_CONFIG.techniques.map((t) => t.group).join('');
-    expect(groups).toMatch(/^A+B+$/);
+    expect(groups).toMatch(/^A+B+C+D+$/);
   });
 
   it('refuse une technique inconnue ou un intervalle mal écrit', () => {

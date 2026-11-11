@@ -1,12 +1,16 @@
 import type { LogicContext } from '../context';
 import type { LogicState, Step, TechniqueId } from '../types';
 import { cageCombination, cageUnitOverlap, crossCageCombinations, parity } from './cages';
-import { swordfish, xWing } from './fish';
+import { alsXz } from './als';
+import { alignedPairExclusion } from './ape';
+import { aic, groupedXCycles, xCycles, xyChain } from './chains';
+import { medusa3d, simpleColoring } from './coloring';
+import { finnedSwordfish, finnedXWing, jellyfish, swordfish, xWing } from './fish';
 import { boxLine, pointing } from './intersections';
 import { cageComparison, cageSplitting, inniesOutiesMulti, rule45Single } from './rule45';
 import { hiddenSingle, nakedSingle } from './singles';
 import { hiddenPair, hiddenQuad, hiddenTriple, nakedPair, nakedQuad, nakedTriple } from './subsets';
-import { xyzWing, yWing } from './wings';
+import { wxyzWing, xyzWing, yWing } from './wings';
 
 /** Une technique parcourt l'état et propose toutes les étapes qu'elle sait trouver. */
 export type TechniqueFinder = (state: LogicState, ctx: LogicContext) => Iterable<Step>;
@@ -35,4 +39,16 @@ export const TECHNIQUES: Record<TechniqueId, TechniqueFinder> = {
   y_wing: yWing,
   xyz_wing: xyzWing,
   swordfish,
+  x_cycles: xCycles,
+  simple_coloring: simpleColoring,
+  xy_chain: xyChain,
+  wxyz_wing: wxyzWing,
+  jellyfish,
+  aligned_pair_exclusion: alignedPairExclusion,
+  medusa_3d: medusa3d,
+  finned_x_wing: finnedXWing,
+  finned_swordfish: finnedSwordfish,
+  grouped_x_cycles: groupedXCycles,
+  als_xz: alsXz,
+  aic,
 };

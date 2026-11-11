@@ -30,6 +30,20 @@ export const TECHNIQUE_IDS = [
   'y_wing',
   'xyz_wing',
   'swordfish',
+  // Groupe C – Diabolique
+  'x_cycles',
+  'simple_coloring',
+  'xy_chain',
+  'wxyz_wing',
+  'jellyfish',
+  'aligned_pair_exclusion',
+  'medusa_3d',
+  // Groupe D – Extrême
+  'finned_x_wing',
+  'finned_swordfish',
+  'grouped_x_cycles',
+  'als_xz',
+  'aic',
 ] as const;
 
 export type TechniqueId = (typeof TECHNIQUE_IDS)[number];

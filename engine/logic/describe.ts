@@ -62,6 +62,8 @@ export function describeZone(step: Step, ctx: LogicContext): string {
   if (step.region) return regionName(step.region);
   const parts = step.units.map(unitName);
   for (const k of step.cages) parts.push(T.cage(ctx.cages[k].sum, cellName(cageAnchor(ctx.cages[k]))));
+  // Chaînes et coloriages : pas de zone simple ; nommer leurs cases dévoilerait la déduction.
+  if (parts.length === 0 && step.cells.length > 3) parts.push(T.digitsZone(digitsOf(step.digits)));
   if (parts.length === 0) parts.push(step.cells.map(cellName).join(', '));
   return parts.join(T.and);
 }

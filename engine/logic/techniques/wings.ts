@@ -77,3 +77,44 @@ function cellsWithCount(state: LogicState, count: number): number[] {
   }
   return list;
 }
+
+/**
+ * WXYZ-Wing : un pivot et trois ailes qu'il voit, quatre cases qui se partagent exactement quatre chiffres.
+ * Un chiffre est « restreint » si toutes les cases qui le contiennent se voient deux à deux (il y est au
+ * plus une fois). Si un seul chiffre Z n'est pas restreint, il est forcément dans l'une de ses cases : les
+ * cases qui voient toutes ces positions de Z ne peuvent pas valoir Z.
+ */
+export function* wxyzWing(state: LogicState, ctx: LogicContext): Generator<Step> {
+  const free = (c: number): boolean =>
+    !state.value[c] && popcount(state.cand[c]) >= 2 && popcount(state.cand[c]) <= 4;
+  for (let pivot = 0; pivot < CELL_COUNT; pivot++) {
+    if (!free(pivot)) continue;
+    const wings = ctx.seen[pivot].filter((c) => free(c) && popcount(state.cand[c] | state.cand[pivot]) <= 4);
+    for (let i = 0; i < wings.length; i++) {
+      for (let j = i + 1; j < wings.length; j++) {
+        for (let k = j + 1; k < wings.length; k++) {
+          const cells = [pivot, wings[i], wings[j], wings[k]];
+          const union = cells.reduce((m, c) => m | state.cand[c], 0);
+          if (popcount(union) !== 4) continue;
+          let loose = 0;
+          for (let d = 1; d <= 9; d++) {
+            const bit = 1 << (d - 1);
+            if (!(union & bit)) continue;
+            const holders = cells.filter((c) => state.cand[c] & bit);
+            const restricted = holders.every((a, x) => holders.slice(x + 1).every((b) => sees(ctx, a, b)));
+            if (!restricted) loose |= bit;
+          }
+          if (popcount(loose) !== 1) continue;
+          const holders = cells.filter((c) => state.cand[c] & loose);
+          const elims = new EliminationSet(state);
+          for (let cell = 0; cell < CELL_COUNT; cell++) {
+            if (cells.includes(cell)) continue;
+            if (holders.every((h) => sees(ctx, cell, h))) elims.add(cell, loose);
+          }
+          if (elims.isEmpty) continue;
+          yield makeStep('wxyz_wing', { eliminations: elims.list(), cells, digits: loose });
+        }
+      }
+    }
+  }
+}
