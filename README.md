@@ -3,7 +3,8 @@
 Jeu de killer sudoku personnel, hors ligne, installable sur iPad (PWA). Le cahier des charges complet est dans
 [docs/cahier-des-charges.md](docs/cahier-des-charges.md).
 
-État : **étape 2** (solveur logique et notation). Il n'y a pas encore d'écran de jeu.
+État : **étape 3** (générateur et banque réduite : 50 grilles HARD, 50 EXPERT). Il n'y a pas encore d'écran
+de jeu.
 
 ## Installer
 
@@ -15,18 +16,19 @@ npm install
 
 ## Commandes
 
-| Commande                        | Rôle                                                    |
-| ------------------------------- | ------------------------------------------------------- |
-| `npm test`                      | lance tous les tests automatiques                       |
-| `npm run test:watch`            | relance les tests à chaque modification                 |
-| `npm run typecheck`             | vérifie les types TypeScript                            |
-| `npm run lint`                  | cherche les erreurs courantes (ESLint)                  |
-| `npm run format`                | met en forme tout le code (Prettier)                    |
-| `npm run solve -- fichier.json` | résout une grille et dit si sa solution est unique      |
-| `npm run trace -- fichier.json` | montre le raisonnement pas à pas, le score et le niveau |
-| `npm run dev`                   | lance l'application sur le PC (http://localhost:5173)   |
-| `npm run dev:ipad`              | idem, accessible depuis l'iPad sur le même Wi-Fi        |
-| `npm run build`                 | produit la version finale dans `dist/`                  |
+| Commande                                        | Rôle                                                    |
+| ----------------------------------------------- | ------------------------------------------------------- |
+| `npm test`                                      | lance tous les tests automatiques                       |
+| `npm run test:watch`                            | relance les tests à chaque modification                 |
+| `npm run typecheck`                             | vérifie les types TypeScript                            |
+| `npm run lint`                                  | cherche les erreurs courantes (ESLint)                  |
+| `npm run format`                                | met en forme tout le code (Prettier)                    |
+| `npm run solve -- fichier.json`                 | résout une grille et dit si sa solution est unique      |
+| `npm run trace -- fichier.json`                 | montre le raisonnement pas à pas, le score et le niveau |
+| `npm run generate -- --level EXPERT --count 50` | génère des grilles et les ajoute à la banque            |
+| `npm run dev`                                   | lance l'application sur le PC (http://localhost:5173)   |
+| `npm run dev:ipad`                              | idem, accessible depuis l'iPad sur le même Wi-Fi        |
+| `npm run build`                                 | produit la version finale dans `dist/`                  |
 
 ## Tester sur l'iPad (pendant le développement)
 
@@ -51,7 +53,8 @@ L'installation sur l'écran d'accueil et le mode hors ligne viendront à l'étap
 - `app/` : l'application web.
 - `texts/fr.ts` : tous les textes en français (interface, noms des techniques, phrases de la trace).
 - `scripts/` : outils en ligne de commande (Node.js).
-- `data/` : banque de grilles (à partir de l'étape 3).
+- `engine/generator/` : générateur de grilles (découpage, unicité, empreinte de dédoublonnage).
+- `data/` : banque de grilles, un fichier par niveau (`bank-hard.json`, `bank-expert.json`…).
 
 ## Le moteur en bref
 
@@ -84,3 +87,33 @@ L'installation sur l'écran d'accueil et le mode hors ligne viendront à l'étap
   remplies. Elle vérifie ensuite l'intervalle de score, la forme des cages et l'absence de goulot isolé.
 - Les intervalles de score sont encore vides (`null`) : ils seront fixés à l'étape 3, d'après les scores
   réellement obtenus.
+
+## Le générateur et la banque
+
+`npm run generate -- --level HARD --count 50` produit des grilles selon la section 6.1 du cahier des charges :
+
+1. une solution complète tirée au hasard ;
+2. un découpage en cages d'un seul tenant, sans chiffre répété, selon le profil du niveau
+   (`generation` dans `engine/difficulty.config.json` : poids de chaque taille de cage) ;
+3. tant que le solveur exact trouve une deuxième solution, une retouche locale : deux cages voisines sont
+   fusionnées puis redécoupées autrement, de façon à interdire cette deuxième solution ;
+4. la notation par le solveur logique : seules les grilles résolues par déduction et classées sont gardées ;
+5. le dédoublonnage : une empreinte identique pour les 8 rotations et symétries d'une même grille.
+
+Options :
+
+- `--workers 4` : nombre de cœurs utilisés (par défaut, tous sauf un) ;
+- `--seed 123` : graine de départ, pour reproduire exactement un tirage ;
+- `--only` : ne garde que le niveau visé (sinon, une grille d'un autre niveau est gardée dans sa banque) ;
+- `--dry-run` : n'enregistre rien ; le rapport sert à mesurer les scores et à régler la configuration.
+
+Chaque grille retenue est écrite aussitôt dans `data/`. On peut arrêter avec `Ctrl + C` puis relancer :
+rien n'est perdu, et une grille existante n'est jamais modifiée. Les identifiants (`HRD-0001`,
+`EXP-0001`…) ne changent jamais et un numéro n'est jamais réutilisé.
+
+La banque actuelle a été produite avec les graines 20261111 (HARD) et 20261112 (EXPERT), en une quinzaine de
+secondes. Le test `scripts/bank-integrity.test.ts` vérifie que chaque grille a une solution unique, se résout
+par déduction et retrouve son niveau et son score. Si l'on modifie la configuration de difficulté, ce test
+signale les grilles dont la notation a changé.
+
+Pour voir le raisonnement d'une grille de la banque : `npm run trace -- data/bank-expert.json 12` (12e grille).

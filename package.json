@@ -1,7 +1,7 @@
 {
   "name": "killer-sudoku-ipad",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Killer sudoku personnel pour iPad (PWA hors ligne)",
   "type": "module",
   "engines": {
@@ -19,7 +19,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "solve": "tsx scripts/solve.ts",
-    "trace": "tsx scripts/trace.ts"
+    "trace": "tsx scripts/trace.ts",
+    "generate": "tsx scripts/generate.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

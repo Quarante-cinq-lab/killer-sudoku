@@ -10,7 +10,7 @@ const expertCages: CageStats = { minSize: 2, maxSize: 5, singleCell: 0, uniqueCo
 function summary(groups: Partial<Record<Group, number>>, techniques: Record<string, number> = {}): Summary {
   return {
     solved: true,
-    score: 200,
+    score: 300, // dans les intervalles HARD et EXPERT de la configuration livrée
     techniques,
     groups: { A: 0, B: 0, C: 0, D: 0, ...groups },
     hardestPoints: 10,
@@ -82,8 +82,8 @@ describe('classement par niveau', () => {
     expect(classify({ ...summary({ B: 2 }), score: 120 }, expertCages, config).rejection).toBe(
       'score_hors_limites',
     );
-    // 200 − 150 = 50 < 100 (minimum HARD) : la difficulté tient à une seule étape.
-    expect(classify({ ...summary({ B: 2 }), hardestPoints: 150 }, expertCages, config).rejection).toBe(
+    // 300 − 250 = 50 < 100 (minimum HARD) : la difficulté tient à une seule étape.
+    expect(classify({ ...summary({ B: 2 }), hardestPoints: 250 }, expertCages, config).rejection).toBe(
       'goulot_isole',
     );
     expect(classify(summary({ B: 2 }), expertCages, config).level).toBe('EXPERT');

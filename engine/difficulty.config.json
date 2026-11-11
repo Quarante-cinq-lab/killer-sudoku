@@ -6,61 +6,237 @@
     "rule45MaxCells : taille maximale des sommes déduites de la règle des 45.",
     "levels.<NIVEAU>.conditions : liste d'alternatives ; une grille remplit le niveau si l'une d'elles est vraie.",
     "  Chaque alternative associe un groupe (A, B, C, D) ou une technique à [minimum, maximum] d'étapes (null = sans limite).",
-    "levels.<NIVEAU>.score : [minimum, maximum] du score total (null = sans limite). Valeurs provisoires, fixées à l'étape 3.",
+    "levels.<NIVEAU>.score : [minimum, maximum] du score total (null = sans limite).",
+    "  HARD et EXPERT : fixés à l’étape 3 d’après 600 grilles générées (les grilles les plus faciles et les plus longues sont écartées). Les autres niveaux le seront avec les groupes C et D.",
     "levels.<NIVEAU>.cages : contraintes de forme des cages pour ce niveau.",
-    "On retient le niveau le plus élevé dont les conditions sont remplies."
+    "On retient le niveau le plus élevé dont les conditions sont remplies.",
+    "generation.<NIVEAU>.cageSizes : poids de chaque taille de cage visée lors du découpage (\"3\": 4 = 4 fois plus souvent qu’une taille de poids 1).",
+    "generation.<NIVEAU>.maxRepairs : nombre maximal de retouches locales pour rendre la solution unique avant d’abandonner la grille."
   ],
   "techniques": {
-    "naked_single": { "group": "A", "points": 1 },
-    "hidden_single": { "group": "A", "points": 1 },
-    "cage_combination": { "group": "A", "points": 2 },
-    "rule45_single": { "group": "A", "points": 3 },
-    "pointing": { "group": "A", "points": 3 },
-    "box_line": { "group": "A", "points": 3 },
-    "cage_unit_overlap": { "group": "A", "points": 3 },
-    "naked_pair": { "group": "A", "points": 3 },
-    "hidden_pair": { "group": "A", "points": 4 },
-    "naked_triple": { "group": "A", "points": 5 },
-    "hidden_triple": { "group": "A", "points": 5 },
-    "innies_outies_multi": { "group": "B", "points": 10 },
-    "cage_splitting": { "group": "B", "points": 15 },
-    "cage_comparison": { "group": "B", "points": 15 },
-    "parity": { "group": "B", "points": 15 },
-    "cross_cage_combinations": { "group": "B", "points": 20 },
-    "naked_quad": { "group": "B", "points": 20 },
-    "hidden_quad": { "group": "B", "points": 20 },
-    "x_wing": { "group": "B", "points": 20 },
-    "y_wing": { "group": "B", "points": 20 },
-    "xyz_wing": { "group": "B", "points": 25 },
-    "swordfish": { "group": "B", "points": 30 }
+    "naked_single": {
+      "group": "A",
+      "points": 1
+    },
+    "hidden_single": {
+      "group": "A",
+      "points": 1
+    },
+    "cage_combination": {
+      "group": "A",
+      "points": 2
+    },
+    "rule45_single": {
+      "group": "A",
+      "points": 3
+    },
+    "pointing": {
+      "group": "A",
+      "points": 3
+    },
+    "box_line": {
+      "group": "A",
+      "points": 3
+    },
+    "cage_unit_overlap": {
+      "group": "A",
+      "points": 3
+    },
+    "naked_pair": {
+      "group": "A",
+      "points": 3
+    },
+    "hidden_pair": {
+      "group": "A",
+      "points": 4
+    },
+    "naked_triple": {
+      "group": "A",
+      "points": 5
+    },
+    "hidden_triple": {
+      "group": "A",
+      "points": 5
+    },
+    "innies_outies_multi": {
+      "group": "B",
+      "points": 10
+    },
+    "cage_splitting": {
+      "group": "B",
+      "points": 15
+    },
+    "cage_comparison": {
+      "group": "B",
+      "points": 15
+    },
+    "parity": {
+      "group": "B",
+      "points": 15
+    },
+    "cross_cage_combinations": {
+      "group": "B",
+      "points": 20
+    },
+    "naked_quad": {
+      "group": "B",
+      "points": 20
+    },
+    "hidden_quad": {
+      "group": "B",
+      "points": 20
+    },
+    "x_wing": {
+      "group": "B",
+      "points": 20
+    },
+    "y_wing": {
+      "group": "B",
+      "points": 20
+    },
+    "xyz_wing": {
+      "group": "B",
+      "points": 25
+    },
+    "swordfish": {
+      "group": "B",
+      "points": 30
+    }
   },
   "rule45MaxCells": 5,
-  "bottleneck": { "enabled": true },
+  "bottleneck": {
+    "enabled": true
+  },
   "levels": {
     "HARD": {
-      "conditions": [{ "B": [0, 0], "C": [0, 0], "D": [0, 0], "rule45_single": [3, null] }],
-      "score": [null, null],
-      "cages": { "minSize": 1, "maxSize": 6, "maxSingleCell": 2, "maxUniqueCombo": 12 }
+      "conditions": [
+        {
+          "B": [0, 0],
+          "C": [0, 0],
+          "D": [0, 0],
+          "rule45_single": [3, null]
+        }
+      ],
+      "score": [160, 320],
+      "cages": {
+        "minSize": 1,
+        "maxSize": 6,
+        "maxSingleCell": 2,
+        "maxUniqueCombo": 8
+      }
     },
     "EXPERT": {
-      "conditions": [{ "B": [2, null], "C": [0, 0], "D": [0, 0] }],
-      "score": [null, null],
-      "cages": { "minSize": 2, "maxSize": 6, "maxSingleCell": 0, "maxUniqueCombo": 9 }
+      "conditions": [
+        {
+          "B": [2, null],
+          "C": [0, 0],
+          "D": [0, 0]
+        }
+      ],
+      "score": [240, 600],
+      "cages": {
+        "minSize": 2,
+        "maxSize": 6,
+        "maxSingleCell": 0,
+        "maxUniqueCombo": 6
+      }
     },
     "DIABOLIQUE": {
-      "conditions": [{ "C": [2, null], "D": [0, 0] }],
+      "conditions": [
+        {
+          "C": [2, null],
+          "D": [0, 0]
+        }
+      ],
       "score": [null, null],
-      "cages": { "minSize": 2, "maxSize": 6, "maxSingleCell": 0, "maxUniqueCombo": 7 }
+      "cages": {
+        "minSize": 2,
+        "maxSize": 6,
+        "maxSingleCell": 0,
+        "maxUniqueCombo": 5
+      }
     },
     "EXTREME": {
-      "conditions": [{ "D": [1, null] }, { "C": [5, null] }],
+      "conditions": [
+        {
+          "D": [1, null]
+        },
+        {
+          "C": [5, null]
+        }
+      ],
       "score": [null, null],
-      "cages": { "minSize": 2, "maxSize": 6, "maxSingleCell": 0, "maxUniqueCombo": 6 }
+      "cages": {
+        "minSize": 2,
+        "maxSize": 6,
+        "maxSingleCell": 0,
+        "maxUniqueCombo": 4
+      }
     },
     "ULTIME": {
-      "conditions": [{ "D": [3, null] }],
+      "conditions": [
+        {
+          "D": [3, null]
+        }
+      ],
       "score": [null, null],
-      "cages": { "minSize": 2, "maxSize": 6, "maxSingleCell": 0, "maxUniqueCombo": 5 }
+      "cages": {
+        "minSize": 2,
+        "maxSize": 6,
+        "maxSingleCell": 0,
+        "maxUniqueCombo": 3
+      }
+    }
+  },
+  "generation": {
+    "HARD": {
+      "cageSizes": {
+        "2": 4,
+        "3": 4,
+        "4": 2,
+        "5": 1
+      },
+      "maxRepairs": 40
+    },
+    "EXPERT": {
+      "cageSizes": {
+        "2": 2,
+        "3": 4,
+        "4": 3,
+        "5": 2,
+        "6": 1
+      },
+      "maxRepairs": 40
+    },
+    "DIABOLIQUE": {
+      "cageSizes": {
+        "2": 1,
+        "3": 3,
+        "4": 3,
+        "5": 2,
+        "6": 1
+      },
+      "maxRepairs": 40
+    },
+    "EXTREME": {
+      "cageSizes": {
+        "2": 1,
+        "3": 2,
+        "4": 3,
+        "5": 3,
+        "6": 2
+      },
+      "maxRepairs": 40
+    },
+    "ULTIME": {
+      "cageSizes": {
+        "2": 1,
+        "3": 2,
+        "4": 3,
+        "5": 3,
+        "6": 2
+      },
+      "maxRepairs": 40
     }
   }
 }

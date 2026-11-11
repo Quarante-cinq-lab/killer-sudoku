@@ -11,6 +11,14 @@ export interface LevelConfig {
   cages: { minSize: number; maxSize: number; maxSingleCell: number; maxUniqueCombo: number | null };
 }
 
+/** Profil de génération d'un niveau (section 6.1). */
+export interface GenerationProfile {
+  /** Poids de chaque taille de cage visée : [taille, poids]. */
+  cageSizes: [number, number][];
+  /** Nombre maximal de retouches pour rendre la solution unique. */
+  maxRepairs: number;
+}
+
 export interface DifficultyConfig {
   version: number;
   /** Techniques dans leur ordre d'essai, avec leur groupe et leurs points. */
@@ -18,6 +26,7 @@ export interface DifficultyConfig {
   rule45MaxCells: number;
   bottleneck: { enabled: boolean };
   levels: Record<Level, LevelConfig>;
+  generation: Record<Level, GenerationProfile>;
 }
 
 function fail(message: string): never {
@@ -71,6 +80,27 @@ export function parseDifficultyConfig(raw: unknown): DifficultyConfig {
     }
     levels[level] = { conditions, score: parseRange(l.score, `${level}.score`), cages };
   }
+  const generationRaw = o.generation as Record<string, Record<string, unknown>> | undefined;
+  if (!generationRaw) fail('« generation » manquant.');
+  const generation = {} as Record<Level, GenerationProfile>;
+  for (const level of LEVELS) {
+    const g = generationRaw[level];
+    if (!g) fail(`generation.${level} manquant.`);
+    const sizes = g.cageSizes as Record<string, unknown> | undefined;
+    if (!sizes || typeof sizes !== 'object') fail(`generation.${level}.cageSizes manquant.`);
+    const cageSizes = Object.entries(sizes).map(([size, weight]): [number, number] => {
+      const n = Number(size);
+      if (!Number.isInteger(n) || n < 1 || n > levels[level].cages.maxSize)
+        fail(`generation.${level}.cageSizes : taille « ${size} » invalide.`);
+      if (typeof weight !== 'number' || weight < 0)
+        fail(`generation.${level}.cageSizes : poids invalide pour « ${size} ».`);
+      return [n, weight];
+    });
+    if (!cageSizes.some(([, w]) => w > 0)) fail(`generation.${level}.cageSizes : aucun poids positif.`);
+    const maxRepairs = g.maxRepairs;
+    if (typeof maxRepairs !== 'number' || maxRepairs < 0) fail(`generation.${level}.maxRepairs invalide.`);
+    generation[level] = { cageSizes, maxRepairs };
+  }
   const bottleneck = o.bottleneck as { enabled?: unknown } | undefined;
   return {
     version: typeof o.version === 'number' ? o.version : 1,
@@ -78,6 +108,7 @@ export function parseDifficultyConfig(raw: unknown): DifficultyConfig {
     rule45MaxCells: typeof o.rule45MaxCells === 'number' ? o.rule45MaxCells : 5,
     bottleneck: { enabled: bottleneck?.enabled === true },
     levels,
+    generation,
   };
 }
 

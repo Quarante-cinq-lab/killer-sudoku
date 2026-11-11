@@ -15,3 +15,8 @@ export * from './logic/enumerate';
 export * from './logic/solver';
 export * from './logic/describe';
 export { TECHNIQUES, type TechniqueFinder } from './logic/techniques';
+export * from './bank';
+export * from './generator/cages';
+export * from './generator/repair';
+export * from './generator/fingerprint';
+export * from './generator/generate';

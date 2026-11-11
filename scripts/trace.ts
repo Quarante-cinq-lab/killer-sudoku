@@ -3,7 +3,8 @@
  * Usage : npm run trace -- grille.json [numéro]
  *
  * Le fichier peut contenir une grille de la banque, un objet { "cages": [...] }, ou un fichier de
- * grilles de test ({ "fixtures": [...] }) : le numéro (à partir de 1) choisit alors la grille.
+ * grilles de test ({ "fixtures": [...] }) ou un fichier de banque ({ "puzzles": [...] }) : le numéro
+ * (à partir de 1) choisit alors la grille. Exemple : npm run trace -- data/bank-expert.json 12
  */
 import { readFileSync } from 'node:fs';
 import { DIFFICULTY_CONFIG } from '../engine/difficulty';
@@ -21,11 +22,13 @@ if (!path) {
 const raw = JSON.parse(readFileSync(path, 'utf8')) as {
   cages?: unknown;
   fixtures?: { name: string; cages: unknown }[];
+  puzzles?: { id: string; cages: unknown }[];
 };
 const index = Math.max(1, Number(indexArg ?? 1)) - 1;
 const fixture = raw.fixtures?.[index];
-const puzzle: Puzzle = { cages: parseCages(raw.cages ?? fixture?.cages) };
-if (fixture) console.log(`Grille : ${fixture.name}\n`);
+const banked = raw.puzzles?.[index];
+const puzzle: Puzzle = { cages: parseCages(raw.cages ?? fixture?.cages ?? banked?.cages) };
+if (fixture ?? banked) console.log(`Grille : ${fixture?.name ?? banked?.id}\n`);
 
 const ctx = createContext(puzzle, DIFFICULTY_CONFIG.rule45MaxCells);
 const points = new Map(DIFFICULTY_CONFIG.techniques.map((t) => [t.id, t.points]));

@@ -47,6 +47,41 @@ export const TEXTS = {
     score_hors_limites: 'son score sort de l’intervalle du niveau',
     cages_non_conformes: 'la forme de ses cages ne convient pas au niveau',
     goulot_isole: 'sa difficulté tient à une seule étape (goulot isolé)',
+    decoupage_impossible: 'le découpage en cages n’a pas respecté le profil du niveau',
+    unicite_impossible: 'les retouches n’ont pas suffi à rendre la solution unique',
+    calcul_trop_long: 'la vérification de l’unicité a été trop longue',
+    doublon: 'elle existe déjà dans la banque (à une symétrie près)',
+    autre_niveau: 'elle est d’un autre niveau (option --only)',
+  },
+
+  generate: {
+    usage:
+      'Usage : npm run generate -- --level HARD|EXPERT --count 50 [--workers 7] [--seed 123] [--only] [--dry-run]',
+    unknownLevel: (level: string) => `Niveau inconnu : « ${level} ».`,
+    unreachable: (level: string) =>
+      `Le niveau ${level} demande des techniques qui ne sont pas encore programmées (groupes C et D).`,
+    start: (level: string, count: number, workers: number, seed: number, dryRun: boolean) =>
+      `Génération ${level} : ${count} grille(s) visée(s), ${workers} cœur(s), graine ${seed}` +
+      (dryRun ? ' (essai à blanc : rien n’est enregistré).' : '.'),
+    bankState: (level: string, count: number, file: string) =>
+      `Banque ${level} : ${count} grille(s) (${file}).`,
+    found: (done: number, total: number, id: string, score: number, groupB: number, seconds: number) =>
+      `[${done}/${total}] ${id}  score ${score}, ${groupB} étape(s) du groupe B  (${seconds.toFixed(1)} s)`,
+    bonus: (id: string, score: number) => `   + ${id}  score ${score} (autre niveau, gardée aussi)`,
+    interrupted: 'Arrêt demandé : les grilles déjà trouvées sont enregistrées.',
+    reportTitle: 'Rapport',
+    duration: (seconds: number, tries: number, msPerTry: number) =>
+      `Durée : ${seconds.toFixed(1)} s, ${tries} essais (${msPerTry.toFixed(0)} ms par essai et par cœur).`,
+    perGrid: (level: string, seconds: number) => `Temps moyen par grille ${level} : ${seconds.toFixed(2)} s.`,
+    levelsHeader: 'Grilles obtenues par niveau :',
+    levelLine: (level: string, count: number, bank: number | null) =>
+      `  ${level.padEnd(11)} ${String(count).padStart(5)}` + (bank === null ? '' : `   (banque : ${bank})`),
+    rejectionsHeader: 'Essais écartés :',
+    rejectionLine: (reason: string, count: number) => `  ${String(count).padStart(5)} × ${reason}`,
+    repairs: (avg: number) => `Retouches moyennes pour l’unicité : ${avg.toFixed(1)} par essai.`,
+    scoresHeader: 'Scores (min · 10 % · médiane · 90 % · max) :',
+    scoreLine: (level: string, values: readonly number[], withoutHardest: number) =>
+      `  ${level.padEnd(11)} ${values.join(' · ')}   (sans l’étape la plus dure, au minimum ${withoutHardest})`,
   },
 
   trace: {
