@@ -1,0 +1,488 @@
+/* Couleurs : thème clair par défaut, thème sombre automatique (le choix manuel viendra avec les Réglages). */
+:root {
+  color-scheme: light dark;
+  --bg: #f7f6fb;
+  --surface: #ffffff;
+  --fg: #1d1b26;
+  --muted: #5d5a6b;
+  --line-thin: #c9c7d3;
+  --line-thick: #1d1b26;
+  --cage: #8a81a6; /* liseré gris-mauve des cages */
+  --sum: #2b2838;
+  --cage-highlight: #dcf1dc; /* cage de la case sélectionnée : vert clair */
+  --selected: #d4e5ff;
+  --selected-border: #2f6fde;
+  --digit: #1f3a93;
+  --note: #4a4759;
+  --key: #ffffff;
+  --key-note: #ebe7f7;
+  --key-note-fg: #4b3f80;
+  --accent: #2f6fde;
+  --accent-fg: #ffffff;
+  --shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 1px 1px rgb(0 0 0 / 6%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15141b;
+    --surface: #1f1e27;
+    --fg: #ecebf3;
+    --muted: #a9a6b8;
+    --line-thin: #3d3b49;
+    --line-thick: #d9d7e3;
+    --cage: #a198c2;
+    --sum: #e4e2ee;
+    --cage-highlight: #213b27;
+    --selected: #22385e;
+    --selected-border: #6ea0ff;
+    --digit: #a9c6ff;
+    --note: #c2bfd0;
+    --key: #2a2934;
+    --key-note: #312c46;
+    --key-note-fg: #cbbfff;
+    --accent: #5b8ff0;
+    --accent-fg: #0d1426;
+    --shadow: 0 1px 2px rgb(0 0 0 / 40%);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, system-ui, 'Segoe UI', sans-serif;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  border-radius: 12px;
+  background: var(--key);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 60ms ease;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+button.primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+button.secondary {
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.loading {
+  text-align: center;
+  margin-top: 40vh;
+  color: var(--muted);
+}
+
+/* ---------- Accueil ---------- */
+
+.home {
+  max-width: 640px;
+  height: 100%;
+  margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 32px) 24px 24px;
+  overflow-y: auto;
+}
+
+.home h1 {
+  font-size: 34px;
+  margin: 0 0 24px;
+}
+
+.home h2 {
+  font-size: 20px;
+  margin: 32px 0 12px;
+  color: var(--muted);
+}
+
+.notice {
+  background: var(--key-note);
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+.resume {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 20px;
+  font-size: 22px;
+}
+
+.resume span {
+  font-size: 16px;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+.level-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.level-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 16px;
+  text-align: left;
+}
+
+.level-tile strong {
+  font-size: 20px;
+}
+
+.level-tile span {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+/* ---------- Écran de jeu ---------- */
+
+.game {
+  height: 100%;
+  display: grid;
+  gap: 10px;
+  padding: calc(env(safe-area-inset-top) + 6px) calc(env(safe-area-inset-right) + 10px)
+    calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 10px);
+  /* Portrait : la grille en haut, le clavier en bas. */
+  grid-template-rows: auto minmax(0, 1fr) clamp(230px, 27vh, 330px);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'bar' 'board' 'keys';
+}
+
+.topbar {
+  grid-area: bar;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+}
+
+.topbar h1 {
+  flex: 1;
+  margin: 0;
+  font-size: 20px;
+  text-align: center;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bar-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  min-width: 44px;
+  justify-content: center;
+  padding: 0 8px;
+  background: transparent;
+  box-shadow: none;
+  font-size: 17px;
+}
+
+.timer {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  min-width: 92px;
+  text-align: right;
+}
+
+.board {
+  grid-area: board;
+  position: relative;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grid {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none; /* le doigt sélectionne, il ne fait ni défiler ni zoomer */
+}
+
+.grid-bg {
+  fill: var(--surface);
+}
+
+.grid-thin line {
+  stroke: var(--line-thin);
+  stroke-width: 1.5;
+}
+
+.grid-thick line {
+  stroke: var(--line-thick);
+  stroke-width: 4;
+  stroke-linecap: square;
+}
+
+.cage-line {
+  fill: none;
+  stroke: var(--cage);
+  stroke-width: 3.5;
+  stroke-linecap: square;
+}
+
+.cage-sum rect {
+  fill: var(--surface);
+}
+
+.cage-sum text {
+  fill: var(--sum);
+  font-weight: 600;
+}
+
+.cage-highlight {
+  fill: var(--cage-highlight);
+}
+
+.selected-fill {
+  fill: var(--selected);
+}
+
+.selected-border {
+  fill: none;
+  stroke: var(--selected-border);
+  stroke-width: 5;
+}
+
+.digit {
+  fill: var(--digit);
+  font-weight: 500;
+}
+
+.note {
+  fill: var(--note);
+  letter-spacing: 2px;
+}
+
+.pause-cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: var(--bg);
+  font-size: 22px;
+}
+
+.pause-cover button {
+  padding: 14px 32px;
+}
+
+.toast {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--fg);
+  color: var(--bg);
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 17px;
+  max-width: 90%;
+  text-align: center;
+}
+
+/* ---------- Double clavier ---------- */
+
+.keypad {
+  grid-area: keys;
+  min-height: 0;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 84px 1fr 0.72fr 84px;
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: 'left digits notes right';
+}
+
+.tools {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tools-left {
+  grid-area: left;
+}
+
+.tools-right {
+  grid-area: right;
+}
+
+.tool {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 0;
+  padding: 4px;
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+.pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 8px;
+  min-height: 0;
+}
+
+.pad-digits {
+  grid-area: digits;
+}
+
+.pad-digits button {
+  font-size: 34px;
+  font-weight: 500;
+  color: var(--digit);
+}
+
+.pad-notes {
+  grid-area: notes;
+}
+
+.pad-notes button {
+  font-size: 20px;
+  background: var(--key-note);
+  color: var(--key-note-fg);
+}
+
+/* Paysage : le clavier passe à droite de la grille. */
+@media (orientation: landscape) {
+  .game {
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 34vw, 420px);
+    grid-template-areas: 'bar bar' 'board keys';
+  }
+
+  .keypad {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 64px minmax(0, 1fr) minmax(0, 0.7fr) 64px;
+    grid-template-areas: 'left' 'digits' 'notes' 'right';
+  }
+
+  .tools {
+    flex-direction: row;
+  }
+}
+
+/* ---------- Fenêtres ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 35%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 10;
+}
+
+.modal {
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 22px;
+  width: min(380px, 100%);
+  box-shadow: 0 10px 40px rgb(0 0 0 / 25%);
+  text-align: center;
+}
+
+.modal h2 {
+  margin: 0 0 14px;
+  font-size: 22px;
+}
+
+.modal p {
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.menu-list,
+.modal-actions.vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu-list button,
+.modal-actions button {
+  min-height: 50px;
+  font-size: 17px;
+  padding: 0 16px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.modal-actions:not(.vertical) button {
+  flex: 1;
+}
+
+.victory-time {
+  font-size: 22px !important;
+  font-weight: 600;
+}

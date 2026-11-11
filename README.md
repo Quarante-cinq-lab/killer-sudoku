@@ -3,8 +3,8 @@
 Jeu de killer sudoku personnel, hors ligne, installable sur iPad (PWA). Le cahier des charges complet est dans
 [docs/cahier-des-charges.md](docs/cahier-des-charges.md).
 
-État : **étape 3** (générateur et banque réduite : 50 grilles HARD, 50 EXPERT). Il n'y a pas encore d'écran
-de jeu.
+État : **étape 4** (écran de jeu jouable sur l'iPad, banque de 50 grilles HARD et 50 EXPERT). Les outils killer et
+les aides viendront à l'étape 5, la bibliothèque et les statistiques à l'étape 6.
 
 ## Installer
 
@@ -50,7 +50,12 @@ L'installation sur l'écran d'accueil et le mode hors ligne viendront à l'étap
 - `engine/logic/` : solveur logique (une technique par famille dans `techniques/`).
 - `engine/difficulty.config.json` : tous les paramètres de difficulté (ordre et points des techniques,
   conditions des niveaux, forme des cages).
-- `app/` : l'application web.
+- `app/` : l'application web (React).
+  - `app/game/state.ts` : état d'une partie et actions du joueur (fonctions pures, testées) ;
+  - `app/game/GameScreen.tsx`, `Keypad.tsx` : écran de jeu et double clavier ;
+  - `app/grid/` : grille SVG et tracé des cages ;
+  - `app/storage.ts` : sauvegarde automatique dans IndexedDB ;
+  - `app/bank.ts` : banque de grilles embarquée (fichiers `data/bank-*.json`).
 - `texts/fr.ts` : tous les textes en français (interface, noms des techniques, phrases de la trace).
 - `scripts/` : outils en ligne de commande (Node.js).
 - `engine/generator/` : générateur de grilles (découpage, unicité, empreinte de dédoublonnage).
@@ -117,3 +122,17 @@ par déduction et retrouve son niveau et son score. Si l'on modifie la configura
 signale les grilles dont la notation a changé.
 
 Pour voir le raisonnement d'une grille de la banque : `npm run trace -- data/bank-expert.json 12` (12e grille).
+
+## L'écran de jeu (étape 4)
+
+- **Sélection** : toucher une case la sélectionne ; glisser le doigt (ou l'Apple Pencil) en sélectionne
+  plusieurs. La cage de la dernière case touchée est surlignée en vert clair.
+- **Grand pavé** : chiffre définitif dans les cases sélectionnées (il remplace les notes). Un second appui
+  sur le même chiffre l'efface.
+- **Petit pavé** : note dans les cases vides sélectionnées. Si toutes l'ont déjà, elle est retirée.
+- **Options** (crayon) : Tout effacer, Effacer la sélection, Remplir toutes les notes, Annuler, Rétablir.
+- **Annuler / Rétablir** : sans limite, conservés dans la sauvegarde.
+- **Chronomètre** : il s'arrête en pause et quand l'application passe en arrière-plan.
+- **Sauvegarde** : chaque action est enregistrée ; « Reprendre » sur l'accueil rouvre la dernière partie.
+- **Clavier physique** (facultatif) : chiffres, Maj + chiffre pour une note, flèches, Retour arrière pour
+  effacer, Cmd + Z pour annuler, Cmd + Maj + Z pour rétablir.

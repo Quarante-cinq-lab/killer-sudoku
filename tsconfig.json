@@ -15,7 +15,8 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node", "vite/client"],
+    "jsx": "react-jsx"
   },
   "include": ["engine", "app", "scripts", "data", "texts", "*.ts"]
 }

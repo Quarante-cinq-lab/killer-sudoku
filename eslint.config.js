@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 export default tseslint.config(
   { ignores: ['dist/', 'node_modules/', 'coverage/'] },
@@ -11,6 +12,12 @@ export default tseslint.config(
     languageOptions: {
       globals: { ...globals.browser, ...globals.node },
     },
+  },
+  {
+    // Règles des « hooks » React (useState, useEffect…).
+    files: ['app/**/*.{ts,tsx}'],
+    plugins: { 'react-hooks': reactHooks },
+    rules: reactHooks.configs.recommended.rules,
   },
   {
     // Le moteur ne dépend jamais de l'interface ni de Node.

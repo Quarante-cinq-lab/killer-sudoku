@@ -3,9 +3,50 @@
 
 export const TEXTS = {
   appName: 'Killer Sudoku',
-  underConstruction: 'Application en construction',
-  engineCheckOk: (ms: number) => `Moteur opérationnel : grille de test résolue en ${ms} ms.`,
-  engineCheckFailed: 'Le moteur n’a pas pu résoudre la grille de test.',
+
+  home: {
+    resume: 'Reprendre',
+    resumeDetail: (name: string, time: string) => `${name} · ${time}`,
+    newGrid: 'Nouvelle grille',
+    unplayed: (n: number) => (n === 0 ? 'toutes jouées' : n === 1 ? '1 jamais jouée' : `${n} jamais jouées`),
+    unavailable: 'bientôt',
+    allPlayed: (level: string) =>
+      `Toutes les grilles ${level} ont été jouées : voici celle que tu as terminée il y a le plus longtemps.`,
+    loading: 'Chargement…',
+  },
+
+  game: {
+    title: (level: string, number: number) => `${level} #${String(number).padStart(3, '0')}`,
+    home: 'Accueil',
+    pause: 'Pause',
+    resume: 'Reprendre',
+    paused: 'Partie en pause',
+    menu: 'Menu',
+    restart: 'Recommencer la grille',
+    restartConfirm: 'Recommencer cette grille à zéro ? Le chronomètre repart aussi de zéro.',
+    undo: 'Annuler',
+    redo: 'Rétablir',
+    hint: 'Indice',
+    digits: 'Chiffres',
+    notes: 'Notes',
+    combinations: 'Combinaisons',
+    calculator: 'Calculatrice',
+    options: 'Options',
+    virtualCages: 'Cages virtuelles',
+    comingSoon: 'Disponible à l’étape 5',
+    eraseAll: 'Tout effacer',
+    eraseAllConfirm: 'Effacer tous les chiffres et toutes les notes ?',
+    eraseSelection: 'Effacer la sélection',
+    fillNotes: 'Remplir toutes les notes',
+    close: 'Fermer',
+    confirm: 'Confirmer',
+    cancel: 'Annuler',
+    fullButWrong: 'La grille est remplie mais contient une erreur.',
+    victoryTitle: 'Bravo !',
+    victoryTime: (time: string) => `Grille terminée en ${time}`,
+    replay: 'Rejouer',
+    nextGrid: 'Grille suivante',
+  },
 
   levels: {
     HARD: 'Hard',
