@@ -336,6 +336,46 @@ Le mode Enquête reprend la mécanique du Murdoku (Manuel Garand) : placer des p
 | Fiabilité des grilles | Tests automatiques : chaque grille de la banque a une solution unique et le solveur logique la résout entièrement |
 | Documentation | Un README qui explique comment installer, lancer, tester, générer des grilles, déployer et installer l'application sur l'iPad |
 
+### 12.1 Sécurité et confidentialité
+
+L'application ne collecte aucune donnée. Le principal risque est donc ailleurs : qu'une information personnelle de l'utilisateur se retrouve dans le dépôt ou dans l'historique Git. Les règles ci-dessous sont obligatoires.
+
+**Aucune information personnelle dans le projet**
+
+- Ne jamais mettre dans le dépôt : nom réel, adresse e-mail personnelle, photos, captures d'écran de l'iPad, chemins de fichiers locaux contenant un nom (par exemple `C:\Users\...`), mots de passe, clés ou jetons d'accès.
+- Un fichier `.gitignore` exclut dès le départ les fichiers locaux, les sauvegardes exportées, les fichiers `.env` et les dossiers d'environnement.
+- Avant chaque commit, Claude Code relit les fichiers modifiés et signale toute information personnelle ou secrète.
+
+**Identité Git anonyme**
+
+- Avant le premier commit, Claude Code vérifie la configuration Git (`git config user.name` et `user.email`) et l'affiche à l'utilisateur.
+- Les commits doivent utiliser un pseudonyme et l'adresse « noreply » fournie par GitHub, jamais l'adresse e-mail personnelle. Chaque commit public affiche en effet le nom et l'adresse de son auteur.
+- Sur GitHub, l'utilisateur active les options « Keep my email addresses private » et « Block command line pushes that expose my email ».
+
+**Application en ligne**
+
+- Pas de nom de domaine personnalisé : un nom de domaine acheté peut être rattaché à l'identité de son propriétaire.
+- Politique de sécurité du contenu (CSP) stricte : l'application ne peut charger des fichiers et se connecter qu'à sa propre adresse (`default-src 'self'`).
+- Aucune ressource externe : polices, icônes et bibliothèques sont incluses dans l'application. Aucune police Google Fonts ni aucun CDN.
+- Non-référencement : balise `<meta name="robots" content="noindex, nofollow">` et fichier `robots.txt` qui interdit l'indexation.
+
+**Mentions**
+
+- README : « Projet personnel, non destiné à la diffusion. Tous droits réservés. »
+- Fichier `LICENSE` : tous droits réservés, aucune réutilisation autorisée sans accord écrit.
+- Page « À propos » de l'application : la même mention.
+
+**Dépendances**
+
+- Le moins de bibliothèques externes possible, chacune justifiée.
+- Fichier `package-lock.json` versionné ; `npm audit` lancé à chaque étape, sans vulnérabilité haute ou critique tolérée.
+- Alertes Dependabot activées sur le dépôt.
+
+**Compte GitHub (à la charge de l'utilisateur)**
+
+- Pseudonyme sans lien avec le nom réel ; profil sans photo, nom, ville ni employeur.
+- Double authentification (2FA) activée.
+
 ## 13. Plan de développement et critères de recette
 
 Claude Code développe l'application en neuf étapes, dans l'ordre. Une étape n'est terminée que lorsque ses tests passent et que son critère de recette est rempli. Chaque étape fait l'objet d'au moins un commit.
@@ -367,6 +407,8 @@ Claude Code développe l'application en neuf étapes, dans l'ordre. Une étape n
 - [ ] Choisir le nom de l'application et son icône.
 - [ ] Créer un compte GitHub (gratuit), nécessaire à l'hébergement sur GitHub Pages, si tu n'en as pas déjà un.
 - [ ] Décider si la génération de grilles directement sur l'iPad (option V1.1) est utile, une fois la banque en place.
+- [ ] Choisir entre un dépôt public (GitHub Pages gratuit, adresse contenant le pseudonyme GitHub) et un dépôt privé (code caché : GitHub Pro payant, ou hébergeur gratuit comme Cloudflare Pages à vérifier).
+- [ ] Créer le compte GitHub avec un pseudonyme et activer la double authentification avant le premier dépôt de code.
 
 ## Sources
 

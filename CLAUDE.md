@@ -24,6 +24,12 @@ Premier objectif : une version jouable sur l'iPad le plus tôt possible.
 3. Étape 7 : PWA installable et déployée sur GitHub Pages.
 Ensuite seulement : étapes 5, 6, puis banque complète, niveaux supérieurs et calibrage (étape 8).
 
+## Sécurité et confidentialité (priorité absolue)
+- Applique la section 12.1 du cahier des charges sans exception.
+- Avant le premier commit : affiche la configuration Git (nom et e-mail) et attends que l'utilisateur confirme un pseudonyme et l'adresse « noreply » de GitHub.
+- Avant chaque commit : vérifie qu'aucun fichier ne contient de nom réel, d'e-mail personnel, de chemin local nominatif, de capture d'écran, de mot de passe ou de clé. Signale tout doute au lieu de commiter.
+- Ne pousse jamais rien vers GitHub sans l'accord explicite de l'utilisateur.
+
 ## Conventions techniques
 - TypeScript strict, React, Vite, vite-plugin-pwa, IndexedDB, Vitest (section 3).
 - Le dossier `engine/` ne dépend jamais de l'interface : il est partagé par l'application et les scripts.
