@@ -1,27 +1,41 @@
 /**
- * Application : accueil minimal (Reprendre, Nouvelle grille par niveau) et écran de jeu.
- * La bibliothèque, l'historique et les statistiques viendront à l'étape 6.
+ * Application : accueil, écran de jeu, bibliothèque (et, à l'étape 6b, statistiques et réglages).
+ * Les données (parties, historique, favoris, réglages) sont chargées depuis IndexedDB au démarrage, puis
+ * relues à chaque retour à l'accueil ou à la bibliothèque.
  */
 import { useEffect, useState } from 'react';
 import { LEVELS, type Level } from '../engine/model';
 import { ENGINE_VERSION } from '../engine/version';
 import { TEXTS } from '../texts/fr';
-import { BANKS, findPuzzle } from './bank';
+import { BANKS, findPuzzle, registerExtraPuzzles } from './bank';
+import { libraryItems, type HistoryEntry, type LibraryItem } from './data/history';
+import { DEFAULT_SETTINGS, type Settings } from './data/settings';
 import { formatTime } from './game/clock';
 import { GameScreen } from './game/GameScreen';
 import { newGame } from './game/state';
+import { LibraryScreen } from './library/LibraryScreen';
 import {
+  addHistory,
   loadCurrentId,
+  loadExtraPuzzles,
+  loadFavorites,
   loadGames,
+  loadHistory,
+  loadSettings,
   requestPersistence,
   saveCurrentId,
   saveGame,
+  setFavorite,
   type SavedGame,
 } from './storage';
 
 const H = TEXTS.home;
 
-type Screen = { kind: 'loading' } | { kind: 'home' } | { kind: 'game'; game: SavedGame; key: number };
+type Screen =
+  | { kind: 'loading' }
+  | { kind: 'home' }
+  | { kind: 'library' }
+  | { kind: 'game'; game: SavedGame; key: number };
 
 const today = (): string => new Date().toLocaleDateString('sv-SE');
 
@@ -31,30 +45,42 @@ const nextScreenKey = (): number => ++screenCounter;
 
 const pickRandom = <T,>(list: readonly T[]): T => list[Math.floor(Math.random() * list.length)];
 
-function freshGame(puzzleId: string, level: Level): SavedGame {
-  return { ...newGame(puzzleId), level, startedAt: today(), updatedAt: Date.now() };
+/** Nouvelle partie à zéro, avec les aides par défaut des réglages. */
+function freshGame(puzzleId: string, level: Level, aids: Settings['defaultAids']): SavedGame {
+  return { ...newGame(puzzleId, aids), level, startedAt: today(), updatedAt: Date.now() };
+}
+
+interface Data {
+  games: SavedGame[];
+  history: HistoryEntry[];
+  favorites: Set<string>;
+  currentId: string | null;
+}
+
+async function loadData(): Promise<Data> {
+  const [games, history, favorites, currentId] = await Promise.all([
+    loadGames(),
+    loadHistory(),
+    loadFavorites(),
+    loadCurrentId(),
+  ]);
+  return { games, history, favorites, currentId };
 }
 
 export function App() {
   const [screen, setScreen] = useState<Screen>({ kind: 'loading' });
-  const [games, setGames] = useState<SavedGame[]>([]);
-  const [currentId, setCurrentId] = useState<string | null>(null);
+  const [data, setData] = useState<Data>({ games: [], history: [], favorites: new Set(), currentId: null });
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [notice, setNotice] = useState<string | null>(null);
-
-  const refresh = async (): Promise<SavedGame[]> => {
-    const [list, id] = await Promise.all([loadGames(), loadCurrentId()]);
-    setGames(list);
-    setCurrentId(id);
-    return list;
-  };
 
   useEffect(() => {
     void requestPersistence();
-    void Promise.all([loadGames(), loadCurrentId()]).then(([list, id]) => {
-      setGames(list);
-      setCurrentId(id);
+    void (async () => {
+      registerExtraPuzzles(await loadExtraPuzzles());
+      setSettings(await loadSettings());
+      setData(await loadData());
       setScreen({ kind: 'home' });
-    });
+    })();
   }, []);
 
   const open = (game: SavedGame) => {
@@ -63,28 +89,67 @@ export function App() {
     setScreen({ kind: 'game', game, key: nextScreenKey() });
   };
 
-  const goHome = () => {
-    void refresh().then(() => setScreen({ kind: 'home' }));
+  const goTo = (kind: 'home' | 'library') => {
+    void loadData().then((d) => {
+      setData(d);
+      setScreen({ kind });
+    });
   };
 
-  /** Tire une grille jamais jouée du niveau ; sinon, reprend à zéro la plus anciennement jouée. */
-  const newGrid = async (level: Level) => {
-    const list = await loadGames();
-    const started = new Set(list.map((g) => g.puzzleId));
-    const unplayed = BANKS[level].filter((p) => !started.has(p.id));
-    let game: SavedGame;
-    if (unplayed.length > 0) {
-      game = freshGame(pickRandom(unplayed).id, level);
-    } else {
-      const oldest = list
-        .filter((g) => g.level === level)
-        .sort((a, b) => Number(b.completed) - Number(a.completed) || a.updatedAt - b.updatedAt)[0];
-      if (!oldest) return;
-      game = freshGame(oldest.puzzleId, level);
-      setNotice(H.allPlayed(TEXTS.levels[level]));
-    }
+  /** Ouvre une nouvelle partie à zéro sur une grille et l'enregistre. */
+  const startFresh = async (puzzleId: string, level: Level) => {
+    const game = freshGame(puzzleId, level, settings.defaultAids);
     await saveGame(game);
     open(game);
+  };
+
+  /** Tire une grille jamais jouée du niveau ; sinon, rejoue la grille terminée il y a le plus longtemps. */
+  const newGrid = async (level: Level) => {
+    const d = await loadData();
+    const started = new Set([...d.games.map((g) => g.puzzleId), ...d.history.map((h) => h.puzzleId)]);
+    const unplayed = BANKS[level].filter((p) => !started.has(p.id));
+    if (unplayed.length > 0) return startFresh(pickRandom(unplayed).id, level);
+    const items = libraryItems(BANKS[level], d.games, d.history, d.favorites)
+      .filter((i) => i.status !== 'en_cours')
+      .sort((a, b) => a.lastPlayed - b.lastPlayed);
+    if (items.length === 0) return;
+    await startFresh(items[0].record.id, level);
+    setNotice(H.allPlayed(TEXTS.levels[level]));
+  };
+
+  /** Bibliothèque : reprendre une partie en cours, sinon en commencer une (grille jamais jouée ou rejouée). */
+  const play = (item: LibraryItem) => {
+    const game = data.games.find((g) => g.puzzleId === item.record.id && !g.completed);
+    if (game) open(game);
+    else void startFresh(item.record.id, item.record.level);
+  };
+
+  /** Bibliothèque : recommencer une partie en cours, qui reste dans l'historique comme abandonnée. */
+  const restart = async (item: LibraryItem) => {
+    const game = data.games.find((g) => g.puzzleId === item.record.id && !g.completed);
+    if (game && (game.undo.length > 0 || game.elapsedMs > 60_000)) {
+      await addHistory({
+        puzzleId: game.puzzleId,
+        level: game.level,
+        startedAt: game.startedAt,
+        endedAt: today(),
+        outcome: 'abandonnee',
+        durationMs: game.elapsedMs,
+        hints: game.hints,
+        checks: game.checks,
+        feeling: null,
+      });
+    }
+    await startFresh(item.record.id, item.record.level);
+  };
+
+  const toggleFavorite = (puzzleId: string) => {
+    const favorite = !data.favorites.has(puzzleId);
+    void setFavorite(puzzleId, favorite);
+    const favorites = new Set(data.favorites);
+    if (favorite) favorites.add(puzzleId);
+    else favorites.delete(puzzleId);
+    setData({ ...data, favorites });
   };
 
   if (screen.kind === 'loading') return <p className="loading">{H.loading}</p>;
@@ -97,15 +162,33 @@ export function App() {
           key={screen.key}
           record={record}
           initial={screen.game}
-          onHome={goHome}
+          favorite={data.favorites.has(record.id)}
+          notesLayout={settings.notesLayout}
+          onToggleFavorite={() => toggleFavorite(record.id)}
+          onHome={() => goTo('home')}
           onNext={() => void newGrid(record.level)}
+          onLibrary={() => goTo('library')}
         />
       );
     }
   }
 
-  const started = new Set(games.map((g) => g.puzzleId));
-  const current = games.find((g) => g.puzzleId === currentId && !g.completed);
+  if (screen.kind === 'library') {
+    const all = LEVELS.flatMap((level) => BANKS[level]);
+    return (
+      <LibraryScreen
+        items={libraryItems(all, data.games, data.history, data.favorites)}
+        history={data.history}
+        onBack={() => goTo('home')}
+        onPlay={play}
+        onRestart={(item) => void restart(item)}
+        onToggleFavorite={toggleFavorite}
+      />
+    );
+  }
+
+  const started = new Set([...data.games.map((g) => g.puzzleId), ...data.history.map((h) => h.puzzleId)]);
+  const current = data.games.find((g) => g.puzzleId === data.currentId && !g.completed);
   const currentRecord = current && findPuzzle(current.puzzleId);
 
   return (
@@ -141,6 +224,11 @@ export function App() {
             </button>
           );
         })}
+      </div>
+      <div className="home-links">
+        <button type="button" onClick={() => goTo('library')}>
+          {H.library}
+        </button>
       </div>
       <footer className="legal">
         <p>{H.legal}</p>

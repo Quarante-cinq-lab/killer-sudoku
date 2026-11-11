@@ -778,3 +778,184 @@ button.secondary {
   font-weight: 600;
   margin: 4px 0 8px;
 }
+
+/* ---------- Fin de partie : ressenti ---------- */
+
+.feelings {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.feelings button {
+  flex: 1;
+  min-height: 48px;
+  font-size: 15px;
+}
+
+.feelings button.chosen {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+/* ---------- Accueil : accès aux autres écrans ---------- */
+
+.home-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.home-links button {
+  min-height: 56px;
+  font-size: 18px;
+}
+
+/* ---------- Écrans avec barre de titre (bibliothèque, statistiques, réglages) ---------- */
+
+.screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: calc(env(safe-area-inset-top) + 6px) calc(env(safe-area-inset-right) + 16px)
+    calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 16px);
+}
+
+.topbar-spacer {
+  min-width: 110px;
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 0 12px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 20px;
+  font-size: 15px;
+}
+
+.chip.on {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.selects {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.selects label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.selects select {
+  min-height: 40px;
+  font-size: 16px;
+  border-radius: 10px;
+  padding: 0 8px;
+  color: var(--fg);
+  background: var(--key);
+  border: 1px solid var(--line-thin);
+}
+
+.library-count {
+  margin-left: auto;
+}
+
+.library-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 24px;
+}
+
+.library-level {
+  font-size: 20px;
+  margin: 16px 0 10px;
+}
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.library-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  text-align: left;
+}
+
+.library-card.jamais .miniature {
+  opacity: 0.85;
+}
+
+.library-name {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.library-name .star {
+  color: #d9a400;
+}
+
+.library-status {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.library-card.terminee .library-status {
+  color: var(--accent);
+}
+
+.miniature {
+  width: 100%;
+  aspect-ratio: 1;
+  display: block;
+  border-radius: 6px;
+}
+
+.miniature-cages {
+  fill: none;
+  stroke: var(--cage);
+  stroke-width: 7;
+}
+
+.miniature-boxes {
+  fill: none;
+  stroke: var(--line-thick);
+  stroke-width: 8;
+}
+
+.miniature-frame {
+  fill: none;
+  stroke: var(--line-thick);
+  stroke-width: 16;
+}
+
+.history-list {
+  text-align: left;
+  padding-left: 18px;
+  font-size: 15px;
+  line-height: 1.6;
+}

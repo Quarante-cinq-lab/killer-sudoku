@@ -12,7 +12,9 @@ import { TEXTS } from '../../texts/fr';
 import { solutionOf } from '../bank';
 import { Grid, type GridMarks } from '../grid/Grid';
 import { Icon } from '../icons';
-import { saveGame, type SavedGame } from '../storage';
+import type { Feeling, HistoryEntry } from '../data/history';
+import type { NotesLayout } from '../data/settings';
+import { addHistory, saveGame, updateHistory, type SavedGame } from '../storage';
 import {
   allDistinct,
   calculatorLines,
@@ -65,8 +67,29 @@ const EMPTY: ReadonlySet<number> = new Set();
 interface Props {
   record: PuzzleRecord;
   initial: SavedGame;
+  favorite: boolean;
+  notesLayout: NotesLayout;
+  onToggleFavorite: () => void;
   onHome: () => void;
   onNext: () => void;
+  onLibrary: () => void;
+}
+
+const today = (): string => new Date().toLocaleDateString('sv-SE');
+
+/** Ligne d'historique d'une partie qui se termine (gagnée ou abandonnée). */
+function historyEntry(game: SavedGame, outcome: HistoryEntry['outcome'], durationMs: number): HistoryEntry {
+  return {
+    puzzleId: game.puzzleId,
+    level: game.level,
+    startedAt: game.startedAt,
+    endedAt: today(),
+    outcome,
+    durationMs,
+    hints: game.hints,
+    checks: game.checks,
+    feeling: null,
+  };
 }
 
 interface Confirmation {
@@ -126,7 +149,8 @@ function Modal({ children, onClose }: { children: ReactNode; onClose?: () => voi
   );
 }
 
-export function GameScreen({ record, initial, onHome, onNext }: Props) {
+export function GameScreen(props: Props) {
+  const { record, initial, onHome, onNext } = props;
   const solution = solutionOf(record);
   const [game, setGame] = useState<SavedGame>(initial);
   const [selection, setSelection] = useState<number[]>([]);
@@ -147,6 +171,8 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
   const [hint, setHint] = useState<{ result: Hint; level: 1 | 2 } | null>(null);
   const ctx = useMemo(() => createContext(record, DIFFICULTY_CONFIG.rule45MaxCells), [record]);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  /** Ligne d'historique de la partie gagnée (pour y ajouter le ressenti). */
+  const [finished, setFinished] = useState<HistoryEntry | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   // Le chronomètre vit dans une « ref » (il change sans redessiner l'écran) ; `elapsed` est sa valeur
   // affichée, rafraîchie chaque seconde.
@@ -178,6 +204,8 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
         clock.current = stopClock(clock.current, now());
         next.elapsedMs = clock.current.baseMs;
         setElapsed(next.elapsedMs);
+        const entry = historyEntry(next, 'terminee', next.elapsedMs);
+        void addHistory(entry).then((id) => setFinished({ ...entry, id }));
         setSelection([]);
         setFocus(null);
       } else if (isFull(next) && !isFull(current)) setToast(T.fullButWrong);
@@ -202,11 +230,17 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
   };
 
   const restart = () => {
+    // Une partie entamée qu'on recommence avant la fin reste dans l'historique comme « abandonnée ».
+    const spent = readClock(clock.current, now());
+    if (!game.completed && (game.undo.length > 0 || spent > 60_000)) {
+      void addHistory(historyEntry(game, 'abandonnee', spent));
+    }
     const fresh: SavedGame = {
       ...game,
       ...newGame(record.id, game.aids),
-      startedAt: new Date().toLocaleDateString('sv-SE'),
+      startedAt: today(),
     };
+    setFinished(null);
     clock.current = startClock(stoppedClock(0), now());
     setElapsed(0);
     gameRef.current = fresh;
@@ -413,6 +447,7 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
           selection={selection}
           focus={focus}
           hidden={paused}
+          notesLayout={props.notesLayout}
           onSelect={(cells, f) => {
             setSelection(cells);
             setFocus(f);
@@ -610,6 +645,9 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
             >
               {T.aidsTitle}
             </button>
+            <button type="button" onClick={props.onToggleFavorite}>
+              {props.favorite ? T.favoriteRemove : T.favoriteAdd}
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -670,6 +708,25 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
           <p>{title}</p>
           <p className="victory-time">{T.victoryTime(formatTime(game.elapsedMs))}</p>
           <p>{T.victoryStats(game.hints, game.checks)}</p>
+          <p className="panel-help">{T.feelingQuestion}</p>
+          <div className="feelings">
+            {(Object.keys(T.feelings) as Feeling[]).map((f) => (
+              <button
+                key={f}
+                type="button"
+                className={finished?.feeling === f ? 'chosen' : ''}
+                disabled={!finished}
+                onClick={() => {
+                  if (!finished) return;
+                  const entry = { ...finished, feeling: f };
+                  setFinished(entry);
+                  void updateHistory(entry);
+                }}
+              >
+                {T.feelings[f]}
+              </button>
+            ))}
+          </div>
           <div className="modal-actions vertical">
             <button type="button" className="primary" onClick={onNext}>
               {T.nextGrid}
@@ -677,8 +734,8 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
             <button type="button" onClick={restart}>
               {T.replay}
             </button>
-            <button type="button" className="secondary" onClick={onHome}>
-              {T.home}
+            <button type="button" className="secondary" onClick={props.onLibrary}>
+              {T.library}
             </button>
           </div>
         </Modal>

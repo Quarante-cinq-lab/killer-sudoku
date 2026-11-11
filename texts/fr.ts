@@ -15,6 +15,9 @@ export const TEXTS = {
     loading: 'Chargement…',
     legal: 'Projet personnel, non destiné à la diffusion. Tous droits réservés.',
     version: (app: string, engine: string) => `Version ${app} · moteur ${engine}`,
+    library: 'Bibliothèque',
+    stats: 'Statistiques',
+    settings: 'Réglages',
   },
 
   game: {
@@ -89,6 +92,11 @@ export const TEXTS = {
     victoryTime: (time: string) => `Grille terminée en ${time}`,
     replay: 'Rejouer',
     nextGrid: 'Grille suivante',
+    library: 'Bibliothèque',
+    feelingQuestion: 'Ton ressenti sur cette grille ?',
+    feelings: { trop_facile: 'Trop facile', bon_niveau: 'Bon niveau', trop_dur: 'Trop dur' },
+    favoriteAdd: 'Ajouter aux favoris',
+    favoriteRemove: 'Retirer des favoris',
   },
 
   levels: {
@@ -125,6 +133,38 @@ export const TEXTS = {
   },
 
   /** Explication de chaque technique (2e niveau de l'indice). */
+  library: {
+    title: 'Bibliothèque',
+    back: 'Accueil',
+    all: 'Tous',
+    favoritesOnly: 'Favoris',
+    statusLabel: 'Statut',
+    sortLabel: 'Tri',
+    status: { jamais: 'Jamais jouée', en_cours: 'En cours', terminee: 'Terminée' },
+    sorts: {
+      numero: 'Numéro',
+      meilleur_temps: 'Meilleur temps',
+      derniere_partie: 'Dernière partie',
+      score: 'Difficulté',
+    },
+    inProgress: (time: string) => `En cours · ${time}`,
+    best: (time: string) => `Meilleur temps ${time}`,
+    count: (n: number) => (n <= 1 ? `${n} grille` : `${n} grilles`),
+    empty: 'Aucune grille ne correspond à ces filtres.',
+    play: 'Jouer',
+    resume: 'Reprendre',
+    restart: 'Recommencer à zéro',
+    restartConfirm:
+      'Recommencer cette grille à zéro ? La partie en cours sera notée « abandonnée » dans l’historique.',
+    history: 'Historique de la grille',
+    noHistory: 'Aucune partie terminée pour l’instant.',
+    historyLine: (date: string, time: string, outcome: string, extra: string) =>
+      `${date} · ${time} · ${outcome}${extra ? ' · ' + extra : ''}`,
+    outcomes: { terminee: 'terminée', abandonnee: 'abandonnée' },
+    hintsUsed: (n: number) => (n === 0 ? 'sans indice' : n === 1 ? '1 indice' : `${n} indices`),
+    score: (n: number) => `Score ${n}`,
+  },
+
   explanations: {
     naked_single: 'Il ne reste qu’un seul chiffre possible dans cette case.',
     hidden_single: 'Dans cette zone, ce chiffre ne peut aller que dans une seule case.',

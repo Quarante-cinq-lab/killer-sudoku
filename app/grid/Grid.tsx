@@ -39,6 +39,8 @@ interface Props {
   focus: number | null;
   /** Grille masquée (pause) : seules les cages restent visibles. */
   hidden: boolean;
+  /** Notes en ligne (ordre de saisie) ou en grille 3 × 3 (réglage, section 7.2). */
+  notesLayout?: 'inline' | 'grid';
   onSelect: (cells: number[], focus: number) => void;
 }
 
@@ -88,6 +90,28 @@ const Frame = memo(function Frame({ puzzle }: { puzzle: Puzzle }) {
     </g>
   );
 });
+
+/** Notes en grille 3 × 3 (réglage) : chaque chiffre a sa place fixe, du 1 en haut à gauche au 9. */
+function GridNotes({ cell, notes }: { cell: number; notes: readonly number[] }) {
+  const left = colOf(cell) * CELL;
+  const top = rowOf(cell) * CELL;
+  return (
+    <>
+      {notes.map((d) => (
+        <text
+          key={d}
+          x={left + 22 + ((d - 1) % 3) * 28}
+          y={top + 34 + Math.floor((d - 1) / 3) * 27}
+          fontSize={21}
+          className="note"
+          textAnchor="middle"
+        >
+          {d}
+        </text>
+      ))}
+    </>
+  );
+}
 
 function Notes({ cell, notes }: { cell: number; notes: readonly number[] }) {
   const x = (colOf(cell) + 0.5) * CELL;
@@ -169,7 +193,17 @@ function VirtualCages({ cages }: { cages: GridMarks['virtualCages'] }) {
   );
 }
 
-export function Grid({ puzzle, marks, values, notes, selection, focus, hidden, onSelect }: Props) {
+export function Grid({
+  puzzle,
+  marks,
+  values,
+  notes,
+  selection,
+  focus,
+  hidden,
+  notesLayout,
+  onSelect,
+}: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const drag = useRef<number[] | null>(null);
   const owner = useMemo(() => cageIndexByCell(puzzle), [puzzle]);
@@ -260,7 +294,11 @@ export function Grid({ puzzle, marks, values, notes, selection, focus, hidden, o
               {value}
             </text>
           ) : notes[cell].length > 0 ? (
-            <Notes key={`n${cell}`} cell={cell} notes={notes[cell]} />
+            notesLayout === 'grid' ? (
+              <GridNotes key={`n${cell}`} cell={cell} notes={notes[cell]} />
+            ) : (
+              <Notes key={`n${cell}`} cell={cell} notes={notes[cell]} />
+            )
           ) : null,
         )}
     </svg>
