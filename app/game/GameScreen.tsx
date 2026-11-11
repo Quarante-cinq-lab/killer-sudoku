@@ -3,6 +3,10 @@
  * pause et victoire. La partie est sauvegardée à chaque action.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { DIFFICULTY_CONFIG } from '../../engine/difficulty';
+import { findHint, hintEffect, type Hint } from '../../engine/hint';
+import { createContext } from '../../engine/logic/context';
+import { cellName, describeStep, describeZone } from '../../engine/logic/describe';
 import { cellAt, colOf, rowOf, type PuzzleRecord } from '../../engine/model';
 import { TEXTS } from '../../texts/fr';
 import { solutionOf } from '../bank';
@@ -49,10 +53,13 @@ import {
   toggleCombination,
   toggleNote,
   undo,
+  writeCells,
+  type CellContent,
   type GameState,
 } from './state';
 
 const T = TEXTS.game;
+const H = TEXTS.hint;
 const EMPTY: ReadonlySet<number> = new Set();
 
 interface Props {
@@ -69,6 +76,47 @@ interface Confirmation {
 
 /** Où va le pavé chiffres : dans la grille, ou dans le champ d'une fenêtre ouverte. */
 type DigitTarget = 'grid' | 'calculator' | 'virtual';
+
+/** Contenu de l'indice selon son niveau de détail. */
+function HintContent({
+  hint,
+  level,
+  describe,
+}: {
+  hint: Hint;
+  level: 1 | 2;
+  describe: (step: Extract<Hint, { kind: 'step' }>['step']) => {
+    name: string;
+    where: string;
+    zone: string;
+    cells: string;
+  };
+}) {
+  if (hint.kind === 'solved') return <p>{H.solved}</p>;
+  if (hint.kind === 'stuck') return <p>{H.stuck}</p>;
+  if (hint.kind === 'error') {
+    return (
+      <>
+        <p className="hint-main">{H.errorTitle}</p>
+        {level === 2 && <p>{H.errorDetail(hint.wrongDigits.length, hint.missingNotes.length)}</p>}
+      </>
+    );
+  }
+  const text = describe(hint.step);
+  return (
+    <>
+      <p className="hint-main">{H.zone(text.name, text.zone)}</p>
+      {level === 2 && (
+        <>
+          <p>{TEXTS.explanations[hint.step.technique]}</p>
+          <p className="panel-help">
+            {H.where(text.where.includes(text.cells) ? text.where : `${text.cells} (${text.where})`)}
+          </p>
+        </>
+      )}
+    </>
+  );
+}
 
 function Modal({ children, onClose }: { children: ReactNode; onClose?: () => void }) {
   return (
@@ -95,6 +143,9 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
   const [virtualSum, setVirtualSum] = useState('');
   /** Résultat de la dernière vérification : case → chiffre jugé faux (la marque disparaît si on le change). */
   const [checked, setChecked] = useState<ReadonlyMap<number, number>>(new Map());
+  /** Indice en cours et niveau de détail affiché (1 : technique et zone ; 2 : explication). */
+  const [hint, setHint] = useState<{ result: Hint; level: 1 | 2 } | null>(null);
+  const ctx = useMemo(() => createContext(record, DIFFICULTY_CONFIG.rule45MaxCells), [record]);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   // Le chronomètre vit dans une « ref » (il change sans redessiner l'écran) ; `elapsed` est sa valeur
@@ -112,12 +163,16 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
     });
   }, []);
 
-  /** Applique une action du joueur, vérifie la victoire et sauvegarde. */
+  /**
+   * Applique une action du joueur, vérifie la victoire et sauvegarde. Toute action sur la grille
+   * périme l'indice affiché (sauf les compteurs : `keepHint`).
+   */
   const update = useCallback(
-    (action: (state: GameState) => GameState) => {
+    (action: (state: GameState) => GameState, keepHint = false) => {
       const current = gameRef.current;
       const changed = action(current);
       if (changed === current) return;
+      if (!keepHint) setHint(null);
       const next = { ...current, ...checkVictory(changed, solution) };
       if (next.completed) {
         clock.current = stopClock(clock.current, now());
@@ -256,9 +311,37 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
   const runCheck = () => {
     setMenuOpen(false);
     const wrong = wrongCells(game.values, solution);
-    update((s) => ({ ...s, checks: s.checks + 1 }));
+    update((s) => ({ ...s, checks: s.checks + 1 }), true);
     setChecked(new Map(wrong.map((c) => [c, game.values[c]])));
     setToast(wrong.length > 0 ? T.checkFound(wrong.length) : T.checkNone);
+  };
+
+  /** Bouton Indice : 1er appui, la technique et la zone ; 2e, l'explication ; 3e, la déduction appliquée. */
+  const onHint = () => {
+    if (blocked || !aids.hint) return;
+    if (!hint) {
+      const result = findHint(ctx, solution, game.values, game.notes);
+      if (result.kind !== 'solved') update((s) => ({ ...s, hints: s.hints + 1 }), true);
+      setHint({ result, level: 1 });
+    } else if (hint.level === 1 && (hint.result.kind === 'step' || hint.result.kind === 'error')) {
+      setHint({ ...hint, level: 2 });
+    } else applyHint(hint.result);
+  };
+
+  /** 3e niveau : applique la déduction, efface les erreurs ou révèle une case (une seule action annulable). */
+  const applyHint = (result: Hint) => {
+    const contents = new Map<number, CellContent>();
+    if (result.kind === 'step') {
+      for (const [cell, content] of hintEffect(result, game.values, game.notes)) contents.set(cell, content);
+    } else if (result.kind === 'error') {
+      for (const cell of [...result.wrongDigits, ...result.missingNotes])
+        contents.set(cell, { value: 0, notes: [] });
+    } else if (result.kind === 'stuck') {
+      const cell = focus !== null && !game.values[focus] ? focus : game.values.findIndex((v) => !v);
+      if (cell >= 0) contents.set(cell, { value: solution[cell], notes: [] });
+    }
+    setHint(null);
+    update((s) => writeCells(s, record, contents));
   };
 
   // Marques des aides, recalculées seulement quand la grille ou la sélection change.
@@ -274,10 +357,17 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
       wrong: aids.check
         ? new Set([...checked].filter(([c, v]) => game.values[c] === v).map(([c]) => c))
         : EMPTY,
-      hint: EMPTY,
+      hint:
+        !hint || hint.level < 2
+          ? EMPTY
+          : hint.result.kind === 'step'
+            ? new Set(hint.result.step.cells)
+            : hint.result.kind === 'error'
+              ? new Set([...hint.result.wrongDigits, ...hint.result.missingNotes])
+              : EMPTY,
       virtualCages: game.virtualCages,
     };
-  }, [aids, checked, focus, game.values, game.virtualCages, record]);
+  }, [aids, checked, focus, game.values, game.virtualCages, hint, record]);
 
   const ask = (message: string, onConfirm: () => void) => setConfirmation({ message, onConfirm });
   const title = T.title(TEXTS.levels[record.level], record.number);
@@ -349,8 +439,8 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
         onDigit={onDigit}
         onNote={onNote}
         onOptions={() => setOptionsOpen(true)}
-        onHint={() => undefined}
-        hintEnabled={false}
+        onHint={onHint}
+        hintEnabled={aids.hint}
         onCombinations={() => setCombosOpen((o) => !o)}
         onCalculator={() => {
           setCalcOpen((o) => !o);
@@ -362,6 +452,37 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
         }}
         open={{ combinations: combosOpen, calculator: calcOpen, virtualCages: virtualOpen }}
       />
+
+      {!blocked && hint && (
+        <FloatingPanel
+          title={H.title(hint.result.kind === 'step' || hint.result.kind === 'error' ? hint.level : 1)}
+          start={{ x: 16, y: 70 }}
+          onClose={() => setHint(null)}
+        >
+          <HintContent
+            hint={hint.result}
+            level={hint.level}
+            describe={(step) => ({
+              ...describeStep(step, ctx),
+              zone: describeZone(step, ctx),
+              cells: step.cells.map(cellName).join(', '),
+            })}
+          />
+          <div className="modal-actions">
+            {hint.result.kind !== 'solved' && (
+              <button type="button" className="primary" onClick={onHint}>
+                {hint.result.kind === 'stuck'
+                  ? H.reveal
+                  : hint.level === 1
+                    ? H.more
+                    : hint.result.kind === 'error'
+                      ? H.fixErrors
+                      : H.apply}
+              </button>
+            )}
+          </div>
+        </FloatingPanel>
+      )}
 
       {!blocked && combosOpen && (
         <FloatingPanel

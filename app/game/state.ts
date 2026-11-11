@@ -227,6 +227,29 @@ export function toggleNote(state: GameState, cells: readonly number[], digit: nu
   return commit(state, contents);
 }
 
+/**
+ * Écrit plusieurs cases en une seule action annulable (application d'un indice).
+ * Avec le nettoyage automatique, chaque chiffre posé disparaît aussi des notes des cases qu'il voit.
+ */
+export function writeCells(
+  state: GameState,
+  puzzle: Puzzle,
+  contents: ReadonlyMap<number, CellContent>,
+): GameState {
+  if (state.completed) return state;
+  const all = new Map(contents);
+  if (state.aids.autoCleanNotes) {
+    for (const [cell, { value }] of contents) {
+      if (!value) continue;
+      for (const peer of seenCells(puzzle, cell)) {
+        if (all.has(peer) || state.values[peer] || !state.notes[peer].includes(value)) continue;
+        all.set(peer, { value: 0, notes: state.notes[peer].filter((n) => n !== value) });
+      }
+    }
+  }
+  return commit(state, all);
+}
+
 /** Vide les cases sélectionnées (chiffres et notes). */
 export function eraseCells(state: GameState, cells: readonly number[]): GameState {
   if (state.completed) return state;

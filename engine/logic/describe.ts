@@ -54,6 +54,18 @@ export function describeWhere(step: Step, ctx: LogicContext): string {
   return parts.join(T.and);
 }
 
+/**
+ * Zone de l'étape, sans en dévoiler le détail (1er niveau de l'indice) : par exemple « bloc 5 »,
+ * « lignes 1 à 3 » ou « cage 17 en L1C1 ».
+ */
+export function describeZone(step: Step, ctx: LogicContext): string {
+  if (step.region) return regionName(step.region);
+  const parts = step.units.map(unitName);
+  for (const k of step.cages) parts.push(T.cage(ctx.cages[k].sum, cellName(cageAnchor(ctx.cages[k]))));
+  if (parts.length === 0) parts.push(step.cells.map(cellName).join(', '));
+  return parts.join(T.and);
+}
+
 /** Ce que l'étape change (chiffres posés, candidats retirés). */
 export function describeEffect(step: Step): string {
   const parts = [

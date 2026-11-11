@@ -124,6 +124,76 @@ export const TEXTS = {
     swordfish: 'Swordfish',
   },
 
+  /** Explication de chaque technique (2e niveau de l'indice). */
+  explanations: {
+    naked_single: 'Il ne reste qu’un seul chiffre possible dans cette case.',
+    hidden_single: 'Dans cette zone, ce chiffre ne peut aller que dans une seule case.',
+    cage_combination:
+      'Avec sa somme et son nombre de cases, cette cage n’admet que certaines combinaisons : les autres chiffres sont impossibles.',
+    rule45_single:
+      'Une ligne, une colonne ou un bloc fait toujours 45. En retirant les cages entièrement à l’intérieur, on obtient la valeur de la case qui dépasse ou qui manque.',
+    pointing:
+      'Dans ce bloc, ce chiffre ne peut être que sur une seule ligne ou colonne : il est exclu du reste de cette ligne ou colonne.',
+    box_line:
+      'Sur cette ligne ou colonne, ce chiffre ne peut être que dans un seul bloc : il est exclu du reste de ce bloc.',
+    cage_unit_overlap:
+      'Un chiffre obligatoire de la cage ne peut se trouver que dans la partie commune avec une ligne, une colonne ou un bloc : il est exclu des autres cases de cette zone (ou l’inverse).',
+    naked_pair:
+      'Deux cases de cette zone n’acceptent que les deux mêmes chiffres : ces chiffres sont exclus des autres cases de la zone.',
+    hidden_pair:
+      'Deux chiffres ne peuvent aller que dans les deux mêmes cases de cette zone : ces cases ne peuvent rien contenir d’autre.',
+    naked_triple:
+      'Trois cases de cette zone se partagent trois chiffres : ces chiffres sont exclus des autres cases de la zone.',
+    hidden_triple:
+      'Trois chiffres ne peuvent aller que dans les trois mêmes cases de cette zone : ces cases ne peuvent rien contenir d’autre.',
+    innies_outies_multi:
+      'Règle des 45 sur plusieurs cases : la somme des cases qui dépassent ou qui manquent est connue, ce qui limite leurs chiffres.',
+    cage_splitting:
+      'La règle des 45 donne la somme d’une partie de la cage : le reste de la cage a donc une somme connue, et moins de combinaisons.',
+    cage_comparison:
+      'La règle des 45 relie les cases qui dépassent et celles qui manquent par une égalité : on compare leurs valeurs possibles.',
+    parity:
+      'Une ligne, une colonne ou un bloc contient toujours cinq chiffres impairs : en comptant les impairs imposés par les cages, on élimine des candidats.',
+    cross_cage_combinations:
+      'Les combinaisons de ces cages d’une même zone doivent être compatibles entre elles : certaines sont impossibles.',
+    naked_quad:
+      'Quatre cases de cette zone se partagent quatre chiffres : ces chiffres sont exclus des autres cases de la zone.',
+    hidden_quad:
+      'Quatre chiffres ne peuvent aller que dans les quatre mêmes cases de cette zone : ces cases ne peuvent rien contenir d’autre.',
+    x_wing:
+      'Sur deux lignes (ou colonnes), ce chiffre n’a que deux places, alignées deux à deux : il est exclu du reste de ces colonnes (ou lignes).',
+    y_wing:
+      'Une case pivot à deux chiffres voit deux « ailes » : quel que soit le chiffre du pivot, l’une des ailes vaut le chiffre commun, qui est donc exclu des cases voyant les deux ailes.',
+    xyz_wing:
+      'Comme un Y-Wing, mais le pivot a trois candidats : le chiffre commun est exclu des cases qui voient le pivot et les deux ailes.',
+    swordfish:
+      'Sur trois lignes (ou colonnes), ce chiffre n’a de place que dans les trois mêmes colonnes (ou lignes) : il est exclu du reste de ces colonnes (ou lignes).',
+  },
+
+  hint: {
+    title: (level: number) => `Indice ${level}/3`,
+    zone: (name: string, zone: string) => `${name} : ${zone}`,
+    where: (where: string) => `Cases utilisées : ${where}`,
+    more: 'Expliquer',
+    apply: 'Appliquer',
+    errorTitle: 'Il y a une erreur dans la grille.',
+    errorDetail: (digits: number, notes: number) =>
+      [
+        digits > 0 ? (digits === 1 ? '1 chiffre faux' : `${digits} chiffres faux`) : '',
+        notes > 0
+          ? notes === 1
+            ? '1 case dont les notes ont perdu le bon chiffre'
+            : `${notes} cases dont les notes ont perdu le bon chiffre`
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' et ') + ' (en jaune).',
+    fixErrors: 'Effacer ces erreurs',
+    stuck: 'Aucune déduction simple ne s’applique ici. On peut révéler une case.',
+    reveal: 'Révéler une case',
+    solved: 'La grille est déjà complète.',
+  },
+
   rejections: {
     non_resolue: 'le solveur logique ne la résout pas entièrement',
     contradiction: 'le raisonnement aboutit à une contradiction',

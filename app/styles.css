@@ -772,3 +772,9 @@ button.secondary {
   height: 26px;
   accent-color: var(--accent);
 }
+
+.hint-main {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 4px 0 8px;
+}

@@ -20,3 +20,4 @@ export * from './generator/cages';
 export * from './generator/repair';
 export * from './generator/fingerprint';
 export * from './generator/generate';
+export * from './hint';

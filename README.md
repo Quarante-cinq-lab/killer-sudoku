@@ -5,9 +5,9 @@ Jeu de killer sudoku personnel, hors ligne, installable sur iPad (PWA). Le cahie
 
 **Projet personnel, non destiné à la diffusion. Tous droits réservés.** Voir [LICENSE](LICENSE).
 
-État : **MVP** (étapes 1 à 4 et 7) : jouable sur l'iPad, installable et hors ligne, avec une banque de 50 grilles
-HARD et 50 EXPERT. Les outils killer et les aides viendront à l'étape 5, la bibliothèque et les statistiques à
-l'étape 6.
+État : **étape 5** (outils killer, aides et indice progressif), après le MVP (étapes 1 à 4 et 7) : jouable sur
+l'iPad, installable et hors ligne, avec une banque de 50 grilles HARD et 50 EXPERT. La bibliothèque et les
+statistiques viendront à l'étape 6.
 
 ## Installer
 
@@ -141,6 +141,23 @@ Pour voir le raisonnement d'une grille de la banque : `npm run trace -- data/ban
 - **Sauvegarde** : chaque action est enregistrée ; « Reprendre » sur l'accueil rouvre la dernière partie.
 - **Clavier physique** (facultatif) : chiffres, Maj + chiffre pour une note, flèches, Retour arrière pour
   effacer, Cmd + Z pour annuler, Cmd + Maj + Z pour rétablir.
+
+## Outils, aides et indice (étape 5)
+
+- **Combinaisons** (icône calculatrice) : toutes les combinaisons de la cage sélectionnée et de ses cages
+  virtuelles. Un toucher barre ou rétablit une combinaison ; celles qui contredisent les chiffres posés sont
+  grisées.
+- **Calculatrice** (bloc-notes) : « Somme » et « Nombre de cases » se remplissent avec le grand pavé (qui
+  change de teinte), « 0 » pour 10, 20…, « C » pour effacer ; chiffres obligatoires ou exclus en option.
+- **Cages virtuelles** : sélectionner des cases, taper leur somme, créer. Pointillé orangé, supprimables.
+- Les fenêtres se déplacent en faisant glisser leur barre de titre.
+- **Aides** (menu « ⋯ » → Aides de la partie) : surlignages, conflits, nettoyage automatique des notes,
+  filtrage des combinaisons, notes automatiques, vérification, indice. Préréglage **Puriste**.
+- **Vérifier la grille** (menu « ⋯ ») : marque en rouge les chiffres faux.
+- **Indice** : 1er appui, la technique et la zone ; 2e, l'explication et les cases utilisées (en jaune) ;
+  3e, la déduction est appliquée (annulable). Si la grille contient une erreur, l'indice la signale.
+  Le calcul part des chiffres et des notes du joueur (`engine/hint.ts`).
+- Annuler et Rétablir couvrent aussi les combinaisons barrées, les cages virtuelles et les indices.
 
 ## Installer l'application sur l'iPad
 
