@@ -5,7 +5,7 @@
  */
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { Level } from '../engine/model';
-import type { GameState } from './game/state';
+import { migrateGame, type GameState } from './game/state';
 
 export interface SavedGame extends GameState {
   level: Level;
@@ -36,7 +36,8 @@ function db(): Promise<IDBPDatabase<Schema>> {
 }
 
 export async function loadGames(): Promise<SavedGame[]> {
-  return (await db()).getAll('games');
+  // Les parties sauvegardées par une version précédente sont converties au format actuel.
+  return (await (await db()).getAll('games')).map(migrateGame);
 }
 
 export async function saveGame(game: SavedGame): Promise<void> {

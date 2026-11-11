@@ -20,6 +20,13 @@
   --accent: #2f6fde;
   --accent-fg: #ffffff;
   --shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 1px 1px rgb(0 0 0 / 6%);
+  --unit-highlight: #eeedf5; /* ligne, colonne et bloc de la case sélectionnée */
+  --same-digit: #cfd9f6;
+  --hint: #fff1b8;
+  --error: #c62828;
+  --error-fill: #fde2e2;
+  --virtual: #d9730d; /* cages virtuelles : pointillé orangé */
+  --struck: #9a97a8;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -43,6 +50,13 @@
     --accent: #5b8ff0;
     --accent-fg: #0d1426;
     --shadow: 0 1px 2px rgb(0 0 0 / 40%);
+    --unit-highlight: #25242e;
+    --same-digit: #2c3a5c;
+    --hint: #4a4220;
+    --error: #ff8a80;
+    --error-fill: #4a2326;
+    --virtual: #f0a050;
+    --struck: #77748a;
   }
 }
 
@@ -300,6 +314,43 @@ button.secondary {
   fill: var(--cage-highlight);
 }
 
+.unit-highlight {
+  fill: var(--unit-highlight);
+}
+
+.same-digit {
+  fill: var(--same-digit);
+}
+
+.hint-highlight {
+  fill: var(--hint);
+}
+
+.conflict-fill,
+.wrong-fill {
+  fill: var(--error-fill);
+}
+
+.digit.error {
+  fill: var(--error);
+}
+
+.virtual-cage-line {
+  fill: none;
+  stroke: var(--virtual);
+  stroke-width: 3;
+  stroke-dasharray: 9 7;
+}
+
+.virtual-sum-bg {
+  fill: var(--surface);
+}
+
+.virtual-sum {
+  fill: var(--virtual);
+  font-weight: 600;
+}
+
 .selected-fill {
   fill: var(--selected);
 }
@@ -407,6 +458,17 @@ button.secondary {
   color: var(--digit);
 }
 
+.pad-digits.to-panel button {
+  background: var(--key-note);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.tool.pressed {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
 .pad-notes {
   grid-area: notes;
 }
@@ -496,4 +558,217 @@ button.secondary {
 .victory-time {
   font-size: 22px !important;
   font-weight: 600;
+}
+
+/* ---------- Fenêtres flottantes (combinaisons, calculatrice, cages virtuelles) ---------- */
+
+.floating {
+  position: fixed;
+  z-index: 5;
+  width: 320px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 25%);
+}
+
+.floating-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 16px;
+  cursor: grab;
+  touch-action: none; /* le doigt déplace la fenêtre */
+  border-bottom: 1px solid var(--line-thin);
+}
+
+.floating-bar h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 17px;
+}
+
+.floating-close {
+  min-width: 44px;
+  min-height: 44px;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.floating-body {
+  padding: 12px 16px 16px;
+  overflow-y: auto;
+}
+
+.panel-help {
+  margin: 6px 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.combo-group h3 {
+  margin: 4px 0 8px;
+  font-size: 15px;
+}
+
+.combo-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.combo {
+  min-width: 56px;
+  min-height: 44px;
+  padding: 0 10px;
+  font-size: 19px;
+  letter-spacing: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.combo.static {
+  background: var(--key-note);
+  border-radius: 10px;
+}
+
+.combo.greyed {
+  opacity: 0.35;
+}
+
+.combo.struck {
+  color: var(--struck);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  box-shadow: none;
+  background: transparent;
+}
+
+.calc-fields {
+  display: flex;
+  gap: 8px;
+}
+
+.calc-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--key);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.calc-field strong {
+  font-size: 26px;
+  color: var(--fg);
+}
+
+.calc-field.active {
+  outline: 2px solid var(--accent);
+}
+
+.calc-keys {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.calc-keys.vertical {
+  flex-direction: column;
+  margin-top: 0;
+}
+
+.calc-keys button {
+  flex: 1;
+  min-height: 44px;
+  min-width: 56px;
+  font-size: 20px;
+}
+
+.calc-digits {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 4px;
+}
+
+.calc-digits button {
+  min-height: 40px;
+  padding: 0;
+  font-size: 17px;
+}
+
+.calc-digits button.required {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.calc-digits button.excluded {
+  color: var(--error);
+  text-decoration: line-through;
+}
+
+.calc-list {
+  width: 100%;
+  min-height: 48px;
+  margin: 12px 0;
+}
+
+.virtual-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.virtual-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.virtual-list span {
+  flex: 1;
+}
+
+.virtual-list button {
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 15px;
+}
+
+/* ---------- Aides de la partie ---------- */
+
+.aids-list {
+  text-align: left;
+}
+
+.aid-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  font-size: 16px;
+  border-bottom: 1px solid var(--line-thin);
+}
+
+.aid-row span {
+  flex: 1;
+}
+
+.aid-row input {
+  width: 26px;
+  height: 26px;
+  accent-color: var(--accent);
 }

@@ -1,33 +1,59 @@
 /**
- * Écran de jeu (section 7) : barre supérieure, grille, double clavier, menu Options, pause et victoire.
- * La partie est sauvegardée à chaque action.
+ * Écran de jeu (section 7) : barre supérieure, grille, double clavier, outils killer, aides, menus,
+ * pause et victoire. La partie est sauvegardée à chaque action.
  */
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { cellAt, colOf, rowOf, type PuzzleRecord } from '../../engine/model';
 import { TEXTS } from '../../texts/fr';
 import { solutionOf } from '../bank';
-import { Grid } from '../grid/Grid';
+import { Grid, type GridMarks } from '../grid/Grid';
 import { Icon } from '../icons';
 import { saveGame, type SavedGame } from '../storage';
+import {
+  allDistinct,
+  calculatorLines,
+  combinationLines,
+  comboSources,
+  conflictCells,
+  unitCells,
+  wrongCells,
+} from './aids';
 import { formatTime, now, readClock, startClock, stopClock, stoppedClock, type Clock } from './clock';
 import { Keypad } from './Keypad';
 import {
+  AidsContent,
+  CalculatorContent,
+  CombinationsContent,
+  emptyCalculator,
+  FloatingPanel,
+  typeInCalculator,
+  VirtualCagesContent,
+  type CalculatorState,
+} from './panels';
+import {
+  addVirtualCage,
   canRedo,
   canUndo,
   checkVictory,
+  DEFAULT_AIDS,
   eraseAll,
   eraseCells,
   fillAllNotes,
   isFull,
   newGame,
+  PURIST_AIDS,
   redo,
+  removeVirtualCage,
+  setAids,
   setDigit,
+  toggleCombination,
   toggleNote,
   undo,
   type GameState,
 } from './state';
 
 const T = TEXTS.game;
+const EMPTY: ReadonlySet<number> = new Set();
 
 interface Props {
   record: PuzzleRecord;
@@ -40,6 +66,9 @@ interface Confirmation {
   message: string;
   onConfirm: () => void;
 }
+
+/** Où va le pavé chiffres : dans la grille, ou dans le champ d'une fenêtre ouverte. */
+type DigitTarget = 'grid' | 'calculator' | 'virtual';
 
 function Modal({ children, onClose }: { children: ReactNode; onClose?: () => void }) {
   return (
@@ -57,6 +86,15 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
   const [paused, setPaused] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [aidsOpen, setAidsOpen] = useState(false);
+  const [combosOpen, setCombosOpen] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false);
+  const [virtualOpen, setVirtualOpen] = useState(false);
+  const [target, setTarget] = useState<DigitTarget>('grid');
+  const [calc, setCalc] = useState<CalculatorState>(emptyCalculator);
+  const [virtualSum, setVirtualSum] = useState('');
+  /** Résultat de la dernière vérification : case → chiffre jugé faux (la marque disparaît si on le change). */
+  const [checked, setChecked] = useState<ReadonlyMap<number, number>>(new Map());
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   // Le chronomètre vit dans une « ref » (il change sans redessiner l'écran) ; `elapsed` est sa valeur
@@ -87,7 +125,7 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
         setElapsed(next.elapsedMs);
         setSelection([]);
         setFocus(null);
-      } else if (isFull(next)) setToast(T.fullButWrong);
+      } else if (isFull(next) && !isFull(current)) setToast(T.fullButWrong);
       gameRef.current = next;
       setGame(next);
       persist(next);
@@ -111,7 +149,7 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
   const restart = () => {
     const fresh: SavedGame = {
       ...game,
-      ...newGame(record.id),
+      ...newGame(record.id, game.aids),
       startedAt: new Date().toLocaleDateString('sv-SE'),
     };
     clock.current = startClock(stoppedClock(0), now());
@@ -120,6 +158,7 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
     setGame(fresh);
     setSelection([]);
     setFocus(null);
+    setChecked(new Map());
     setPaused(false);
     persist(fresh);
   };
@@ -152,7 +191,7 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
     };
   }, [pause]);
 
-  // Le message « grille remplie mais fausse » disparaît seul.
+  // Les messages courts disparaissent seuls.
   useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(null), 3500);
@@ -160,17 +199,40 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
   }, [toast]);
 
   const blocked = paused || game.completed;
-  const onDigit = (d: number) => !blocked && update((s) => setDigit(s, selection, d));
+  const aids = game.aids;
+  const digitTarget: DigitTarget =
+    target === 'calculator' && calcOpen
+      ? 'calculator'
+      : target === 'virtual' && virtualOpen
+        ? 'virtual'
+        : 'grid';
+
+  /** Grand pavé : chiffre dans la grille, ou dans le champ de la fenêtre active. */
+  const onDigit = (d: number) => {
+    if (blocked) return;
+    if (digitTarget === 'calculator') setCalc((c) => typeInCalculator(c, d));
+    else if (digitTarget === 'virtual') {
+      setVirtualSum((v) => {
+        const next = (v === '0' ? '' : v) + String(d);
+        return Number(next) <= 405 ? next : v;
+      });
+    } else update((s) => setDigit(s, record, selection, d));
+  };
   const onNote = (d: number) => !blocked && update((s) => toggleNote(s, selection, d));
 
   // Clavier physique (facultatif) : chiffres, Maj + chiffre pour une note, flèches, effacement.
+  const onDigitRef = useRef(onDigit);
+  useEffect(() => {
+    onDigitRef.current = onDigit;
+  });
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (blocked || confirmation) return;
       const digit = /^(Digit|Numpad)([1-9])$/.exec(event.code);
       if (digit) {
         const d = Number(digit[2]);
-        update((s) => (event.shiftKey ? toggleNote(s, selection, d) : setDigit(s, selection, d)));
+        if (event.shiftKey) update((s) => toggleNote(s, selection, d));
+        else onDigitRef.current(d);
       } else if (event.key === 'Backspace' || event.key === 'Delete') {
         update((s) => eraseCells(s, selection));
       } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
@@ -190,8 +252,42 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [blocked, confirmation, focus, selection, update]);
 
+  /** Vérification (section 9) : marque les chiffres faux et compte la vérification. */
+  const runCheck = () => {
+    setMenuOpen(false);
+    const wrong = wrongCells(game.values, solution);
+    update((s) => ({ ...s, checks: s.checks + 1 }));
+    setChecked(new Map(wrong.map((c) => [c, game.values[c]])));
+    setToast(wrong.length > 0 ? T.checkFound(wrong.length) : T.checkNone);
+  };
+
+  // Marques des aides, recalculées seulement quand la grille ou la sélection change.
+  const marks: GridMarks = useMemo(() => {
+    const focusValue = focus === null ? 0 : game.values[focus];
+    return {
+      units: aids.highlightUnits && focus !== null ? unitCells(focus) : EMPTY,
+      sameDigit:
+        aids.highlightSameDigits && focusValue
+          ? new Set(game.values.flatMap((v, c) => (v === focusValue ? [c] : [])))
+          : EMPTY,
+      conflicts: aids.conflicts ? conflictCells(record, game.values) : EMPTY,
+      wrong: aids.check
+        ? new Set([...checked].filter(([c, v]) => game.values[c] === v).map(([c]) => c))
+        : EMPTY,
+      hint: EMPTY,
+      virtualCages: game.virtualCages,
+    };
+  }, [aids, checked, focus, game.values, game.virtualCages, record]);
+
   const ask = (message: string, onConfirm: () => void) => setConfirmation({ message, onConfirm });
   const title = T.title(TEXTS.levels[record.level], record.number);
+  /** Position de départ des fenêtres : à gauche, ou sur la droite de la grille (sans couvrir le clavier). */
+  const panelX = (side: 'left' | 'right') => {
+    if (side === 'left') return 16;
+    const w = window.innerWidth;
+    const keypad = w > window.innerHeight ? Math.min(420, Math.max(300, 0.34 * w)) + 20 : 0;
+    return Math.max(16, w - keypad - 336);
+  };
 
   return (
     <div className="game">
@@ -221,6 +317,7 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
       <main className="board">
         <Grid
           puzzle={record}
+          marks={marks}
           values={game.values}
           notes={game.notes}
           selection={selection}
@@ -246,12 +343,86 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
         canUndo={canUndo(game)}
         canRedo={canRedo(game)}
         disabled={blocked}
+        digitsToPanel={digitTarget !== 'grid'}
         onUndo={() => update(undo)}
         onRedo={() => update(redo)}
         onDigit={onDigit}
         onNote={onNote}
         onOptions={() => setOptionsOpen(true)}
+        onHint={() => undefined}
+        hintEnabled={false}
+        onCombinations={() => setCombosOpen((o) => !o)}
+        onCalculator={() => {
+          setCalcOpen((o) => !o);
+          setTarget('calculator');
+        }}
+        onVirtualCages={() => {
+          setVirtualOpen((o) => !o);
+          setTarget('virtual');
+        }}
+        open={{ combinations: combosOpen, calculator: calcOpen, virtualCages: virtualOpen }}
       />
+
+      {!blocked && combosOpen && (
+        <FloatingPanel
+          title={T.combinationsTitle}
+          start={{ x: panelX('right'), y: 70 }}
+          onClose={() => setCombosOpen(false)}
+        >
+          <CombinationsContent
+            sources={focus === null ? [] : comboSources(record, game.virtualCages, focus)}
+            linesOf={(source) => combinationLines(source, game.values)}
+            struck={game.struck}
+            filter={aids.filterCombinations}
+            mayRepeat={(source) => source.virtual && !allDistinct(record, source.cells)}
+            onToggle={(key, mask) => update((s) => toggleCombination(s, key, mask))}
+          />
+        </FloatingPanel>
+      )}
+
+      {!blocked && calcOpen && (
+        <FloatingPanel
+          title={T.calculatorTitle}
+          start={{ x: panelX('left'), y: 70 }}
+          onClose={() => setCalcOpen(false)}
+        >
+          <CalculatorContent
+            calc={calc}
+            lines={calculatorLines(Number(calc.sum), Number(calc.count), calc.required, calc.excluded)}
+            onChange={(c) => {
+              setCalc(c);
+              setTarget('calculator');
+            }}
+          />
+        </FloatingPanel>
+      )}
+
+      {!blocked && virtualOpen && (
+        <FloatingPanel
+          title={T.virtualTitle}
+          start={{ x: panelX('left'), y: 320 }}
+          onClose={() => setVirtualOpen(false)}
+        >
+          <VirtualCagesContent
+            cages={game.virtualCages}
+            selectionSize={selection.length}
+            sum={virtualSum}
+            onSum={(sum) => {
+              setVirtualSum(sum);
+              setTarget('virtual');
+            }}
+            onCreate={() => {
+              update((s) => addVirtualCage(s, selection, Number(virtualSum)));
+              setVirtualSum('');
+            }}
+            onShow={(cage) => {
+              setSelection(cage.cells);
+              setFocus(cage.cells[0]);
+            }}
+            onRemove={(id) => update((s) => removeVirtualCage(s, id))}
+          />
+        </FloatingPanel>
+      )}
 
       {optionsOpen && (
         <Modal onClose={() => setOptionsOpen(false)}>
@@ -276,15 +447,17 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
             >
               {T.eraseSelection}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                update((s) => fillAllNotes(s, record));
-                setOptionsOpen(false);
-              }}
-            >
-              {T.fillNotes}
-            </button>
+            {aids.autoNotes && (
+              <button
+                type="button"
+                onClick={() => {
+                  update((s) => fillAllNotes(s, record));
+                  setOptionsOpen(false);
+                }}
+              >
+                {T.fillNotes}
+              </button>
+            )}
             <button type="button" disabled={!canUndo(game)} onClick={() => update(undo)}>
               {T.undo}
             </button>
@@ -302,6 +475,20 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
         <Modal onClose={() => setMenuOpen(false)}>
           <h2>{T.menu}</h2>
           <div className="menu-list">
+            {aids.check && (
+              <button type="button" disabled={game.completed} onClick={runCheck}>
+                {T.check}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                setAidsOpen(true);
+              }}
+            >
+              {T.aidsTitle}
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -312,6 +499,23 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
               {T.restart}
             </button>
             <button type="button" className="secondary" onClick={() => setMenuOpen(false)}>
+              {T.close}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {aidsOpen && (
+        <Modal onClose={() => setAidsOpen(false)}>
+          <h2>{T.aidsTitle}</h2>
+          <AidsContent
+            aids={aids}
+            onChange={(next) => update((s) => setAids(s, next))}
+            purist={PURIST_AIDS}
+            defaults={DEFAULT_AIDS}
+          />
+          <div className="modal-actions">
+            <button type="button" className="secondary" onClick={() => setAidsOpen(false)}>
               {T.close}
             </button>
           </div>
@@ -344,6 +548,7 @@ export function GameScreen({ record, initial, onHome, onNext }: Props) {
           <h2>{T.victoryTitle}</h2>
           <p>{title}</p>
           <p className="victory-time">{T.victoryTime(formatTime(game.elapsedMs))}</p>
+          <p>{T.victoryStats(game.hints, game.checks)}</p>
           <div className="modal-actions vertical">
             <button type="button" className="primary" onClick={onNext}>
               {T.nextGrid}

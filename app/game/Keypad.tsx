@@ -1,6 +1,6 @@
 /**
  * Double clavier (section 7.3) : outils à gauche, grand pavé des chiffres, petit pavé des notes,
- * outils killer à droite. Les outils de l'étape 5 sont visibles mais grisés.
+ * outils killer à droite. Un outil dont la fenêtre est ouverte apparaît enfoncé.
  */
 import { TEXTS } from '../../texts/fr';
 import { Icon, type IconName } from '../icons';
@@ -12,11 +12,20 @@ interface Props {
   canUndo: boolean;
   canRedo: boolean;
   disabled: boolean;
+  /** Le grand pavé écrit dans une fenêtre (calculatrice ou cage virtuelle) : il change de teinte. */
+  digitsToPanel: boolean;
   onUndo: () => void;
   onRedo: () => void;
   onDigit: (digit: number) => void;
   onNote: (digit: number) => void;
   onOptions: () => void;
+  onHint: () => void;
+  hintEnabled: boolean;
+  onCombinations: () => void;
+  onCalculator: () => void;
+  onVirtualCages: () => void;
+  /** Fenêtres ouvertes (boutons affichés enfoncés). */
+  open: { combinations: boolean; calculator: boolean; virtualCages: boolean };
 }
 
 function Tool({
@@ -24,19 +33,21 @@ function Tool({
   label,
   onClick,
   enabled = true,
+  pressed = false,
 }: {
   icon: IconName;
   label: string;
   onClick?: () => void;
   enabled?: boolean;
+  pressed?: boolean;
 }) {
   return (
     <button
       type="button"
-      className="tool"
+      className={pressed ? 'tool pressed' : 'tool'}
       disabled={!enabled}
       onClick={onClick}
-      title={enabled ? label : `${label} — ${T.comingSoon}`}
+      aria-pressed={pressed}
     >
       <Icon name={icon} />
       <span>{label}</span>
@@ -44,15 +55,19 @@ function Tool({
   );
 }
 
-export function Keypad({ canUndo, canRedo, disabled, onUndo, onRedo, onDigit, onNote, onOptions }: Props) {
+export function Keypad(props: Props) {
+  const { canUndo, canRedo, disabled, onUndo, onRedo, onDigit, onNote, onOptions, open } = props;
   return (
     <div className="keypad">
       <div className="tools tools-left">
         <Tool icon="undo" label={T.undo} onClick={onUndo} enabled={canUndo && !disabled} />
         <Tool icon="redo" label={T.redo} onClick={onRedo} enabled={canRedo && !disabled} />
-        <Tool icon="hint" label={T.hint} enabled={false} />
+        <Tool icon="hint" label={T.hint} onClick={props.onHint} enabled={props.hintEnabled && !disabled} />
       </div>
-      <div className="pad pad-digits" aria-label={T.digits}>
+      <div
+        className={props.digitsToPanel ? 'pad pad-digits to-panel' : 'pad pad-digits'}
+        aria-label={T.digits}
+      >
         {DIGITS.map((d) => (
           <button key={d} type="button" disabled={disabled} onClick={() => onDigit(d)}>
             {d}
@@ -67,10 +82,28 @@ export function Keypad({ canUndo, canRedo, disabled, onUndo, onRedo, onDigit, on
         ))}
       </div>
       <div className="tools tools-right">
-        <Tool icon="calculator" label={T.combinations} enabled={false} />
-        <Tool icon="notepad" label={T.calculator} enabled={false} />
+        <Tool
+          icon="calculator"
+          label={T.combinations}
+          onClick={props.onCombinations}
+          enabled={!disabled}
+          pressed={open.combinations}
+        />
+        <Tool
+          icon="notepad"
+          label={T.calculator}
+          onClick={props.onCalculator}
+          enabled={!disabled}
+          pressed={open.calculator}
+        />
         <Tool icon="pencil" label={T.options} onClick={onOptions} enabled={!disabled} />
-        <Tool icon="virtualCage" label={T.virtualCages} enabled={false} />
+        <Tool
+          icon="virtualCage"
+          label={T.virtualCages}
+          onClick={props.onVirtualCages}
+          enabled={!disabled}
+          pressed={open.virtualCages}
+        />
       </div>
     </div>
   );

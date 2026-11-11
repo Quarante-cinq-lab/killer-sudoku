@@ -27,15 +27,15 @@ describe('saisie', () => {
   it('un chiffre définitif remplace les notes de la case', () => {
     let s = toggleNote(fresh(), [0], 3);
     s = toggleNote(s, [0], 5);
-    s = setDigit(s, [0], 7);
+    s = setDigit(s, record, [0], 7);
     expect(s.values[0]).toBe(7);
     expect(s.notes[0]).toEqual([]);
   });
 
   it('un chiffre s’inscrit dans toutes les cases sélectionnées ; un second appui l’efface', () => {
-    let s = setDigit(fresh(), [0, 1], 4);
+    let s = setDigit(fresh(), record, [0, 1], 4);
     expect([s.values[0], s.values[1]]).toEqual([4, 4]);
-    s = setDigit(s, [0, 1], 4);
+    s = setDigit(s, record, [0, 1], 4);
     expect([s.values[0], s.values[1]]).toEqual([0, 0]);
   });
 
@@ -54,14 +54,14 @@ describe('saisie', () => {
   });
 
   it('une note ne touche pas une case qui a un chiffre définitif', () => {
-    let s = setDigit(fresh(), [0], 2);
+    let s = setDigit(fresh(), record, [0], 2);
     s = toggleNote(s, [0, 1], 9);
     expect(s.notes[0]).toEqual([]);
     expect(s.notes[1]).toEqual([9]);
   });
 
   it('efface la sélection ou toute la grille', () => {
-    let s = setDigit(fresh(), [0], 1);
+    let s = setDigit(fresh(), record, [0], 1);
     s = toggleNote(s, [5], 3);
     expect(eraseCells(s, [0]).values[0]).toBe(0);
     const cleared = eraseAll(s);
@@ -78,7 +78,7 @@ describe('saisie', () => {
 describe('annuler et rétablir', () => {
   it('annule et rétablit chaque action, dans l’ordre', () => {
     const s0 = fresh();
-    const s1 = setDigit(s0, [0], 5);
+    const s1 = setDigit(s0, record, [0], 5);
     const s2 = toggleNote(s1, [1, 2], 3);
     const back1 = undo(s2);
     expect(back1.values).toEqual(s1.values);
@@ -93,9 +93,9 @@ describe('annuler et rétablir', () => {
   });
 
   it('une nouvelle action efface ce qu’on pouvait rétablir', () => {
-    const s = undo(setDigit(fresh(), [0], 5));
+    const s = undo(setDigit(fresh(), record, [0], 5));
     expect(canRedo(s)).toBe(true);
-    expect(canRedo(setDigit(s, [1], 2))).toBe(false);
+    expect(canRedo(setDigit(s, record, [1], 2))).toBe(false);
   });
 });
 
@@ -112,7 +112,7 @@ describe('notes automatiques et victoire', () => {
   });
 
   it('« Remplir toutes les notes » ne remplit que les cases vides, et s’annule d’un coup', () => {
-    const s = fillAllNotes(setDigit(fresh(), [0], solution[0]), record);
+    const s = fillAllNotes(setDigit(fresh(), record, [0], solution[0]), record);
     expect(s.notes[0]).toEqual([]);
     expect(s.notes[1].length).toBeGreaterThan(0);
     expect(s.notes[1]).toEqual([...s.notes[1]].sort((a, b) => a - b));
@@ -121,13 +121,13 @@ describe('notes automatiques et victoire', () => {
 
   it('détecte la victoire seulement si la grille est juste, puis fige la partie', () => {
     let s = fresh();
-    for (let cell = 0; cell < 80; cell++) s = setDigit(s, [cell], solution[cell]);
-    const wrong = setDigit(s, [80], (solution[80] % 9) + 1);
+    for (let cell = 0; cell < 80; cell++) s = setDigit(s, record, [cell], solution[cell]);
+    const wrong = setDigit(s, record, [80], (solution[80] % 9) + 1);
     expect(isFull(wrong)).toBe(true);
     expect(checkVictory(wrong, solution).completed).toBe(false);
-    const won = checkVictory(setDigit(s, [80], solution[80]), solution);
+    const won = checkVictory(setDigit(s, record, [80], solution[80]), solution);
     expect(won.completed).toBe(true);
-    expect(setDigit(won, [0], 1)).toBe(won);
+    expect(setDigit(won, record, [0], 1)).toBe(won);
     expect(canUndo(won)).toBe(false);
   });
 });

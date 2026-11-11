@@ -3,12 +3,16 @@
  * l'état actuel et renvoie un nouvel état, sans rien afficher. C'est ce qui permet de tout tester
  * automatiquement, et de sauvegarder la partie telle quelle.
  *
- * Annuler/Rétablir : chaque action enregistre, pour chaque case touchée, son contenu avant et après.
- * Annuler remet le contenu « avant », Rétablir le contenu « après ». L'historique n'a pas de limite.
+ * Annuler/Rétablir : chaque action enregistre ce qu'elle a changé, « avant » et « après » : le contenu
+ * des cases touchées et, si besoin, les combinaisons barrées et les cages virtuelles. L'historique n'a pas
+ * de limite et il est sauvegardé avec la partie.
  */
 import { digitBit, digitsOf } from '../../engine/bits';
 import { combinationsFor } from '../../engine/combinations';
 import { cageIndexByCell, CELL_COUNT, PEERS, type Puzzle } from '../../engine/model';
+
+/** Version du format de sauvegarde d'une partie (les anciennes sont converties par migrateGame). */
+export const GAME_FORMAT = 2;
 
 /** Contenu d'une case : un chiffre définitif (0 = vide) et des notes, dans leur ordre de saisie. */
 export interface CellContent {
@@ -22,29 +26,117 @@ export interface CellChange {
   after: CellContent;
 }
 
-export interface GameState {
+/** Cage ajoutée par le joueur (section 7.4) : des cases et une somme qu'il a déduite. */
+export interface VirtualCage {
+  id: number;
+  sum: number;
+  cells: number[];
+}
+
+/** Ce qui n'est pas dans les cases : combinaisons barrées (par cage) et cages virtuelles. */
+export interface Extras {
+  /** Combinaisons barrées, par cage : clé « c<case de la somme> » ou « v<numéro de cage virtuelle> ». */
+  struck: Record<string, number[]>;
+  virtualCages: VirtualCage[];
+}
+
+/** Une action annulable. */
+export interface Change {
+  cells: CellChange[];
+  extras?: { before: Extras; after: Extras };
+}
+
+/** Aides désactivables (section 9). */
+export interface Aids {
+  highlightUnits: boolean;
+  highlightSameDigits: boolean;
+  conflicts: boolean;
+  autoCleanNotes: boolean;
+  filterCombinations: boolean;
+  autoNotes: boolean;
+  check: boolean;
+  hint: boolean;
+}
+
+export const DEFAULT_AIDS: Aids = {
+  highlightUnits: true,
+  highlightSameDigits: true,
+  conflicts: true,
+  autoCleanNotes: true,
+  filterCombinations: true,
+  autoNotes: true,
+  check: true,
+  hint: true,
+};
+
+/** Préréglage « Puriste » : tout est désactivé sauf le surlignage. */
+export const PURIST_AIDS: Aids = {
+  highlightUnits: true,
+  highlightSameDigits: true,
+  conflicts: false,
+  autoCleanNotes: false,
+  filterCombinations: false,
+  autoNotes: false,
+  check: false,
+  hint: false,
+};
+
+export interface GameState extends Extras {
+  version: typeof GAME_FORMAT;
   puzzleId: string;
   values: number[];
   notes: number[][];
   /** Actions annulables, la plus récente en dernier. */
-  undo: CellChange[][];
+  undo: Change[];
   /** Actions annulées qu'on peut rétablir, la plus récente en dernier. */
-  redo: CellChange[][];
+  redo: Change[];
   /** Temps de jeu cumulé, en millisecondes (le chronomètre en cours est géré à part). */
   elapsedMs: number;
   completed: boolean;
+  /** Nombre d'indices et de vérifications utilisés (section 9). */
+  hints: number;
+  checks: number;
+  aids: Aids;
 }
 
-export function newGame(puzzleId: string): GameState {
+export function newGame(puzzleId: string, aids: Aids = DEFAULT_AIDS): GameState {
   return {
+    version: GAME_FORMAT,
     puzzleId,
     values: new Array<number>(CELL_COUNT).fill(0),
     notes: Array.from({ length: CELL_COUNT }, () => []),
+    struck: {},
+    virtualCages: [],
     undo: [],
     redo: [],
     elapsedMs: 0,
     completed: false,
+    hints: 0,
+    checks: 0,
+    aids: { ...aids },
   };
+}
+
+/**
+ * Convertit une partie sauvegardée par une version précédente de l'application (format 1 : historique
+ * limité aux cases, pas d'aides ni de compteurs). Les champs inconnus sont conservés.
+ */
+export function migrateGame<T extends object>(saved: T): T & GameState {
+  const raw = saved as Partial<GameState> & { undo?: unknown[]; redo?: unknown[] };
+  if (raw.version === GAME_FORMAT) return saved as T & GameState;
+  const toChange = (entry: unknown): Change =>
+    Array.isArray(entry) ? { cells: entry as CellChange[] } : (entry as Change);
+  return {
+    ...saved,
+    version: GAME_FORMAT,
+    struck: raw.struck ?? {},
+    virtualCages: raw.virtualCages ?? [],
+    undo: (raw.undo ?? []).map(toChange),
+    redo: (raw.redo ?? []).map(toChange),
+    hints: raw.hints ?? 0,
+    checks: raw.checks ?? 0,
+    aids: { ...DEFAULT_AIDS, ...raw.aids },
+  } as T & GameState;
 }
 
 const contentOf = (state: GameState, cell: number): CellContent => ({
@@ -55,45 +147,65 @@ const contentOf = (state: GameState, cell: number): CellContent => ({
 const sameContent = (a: CellContent, b: CellContent): boolean =>
   a.value === b.value && a.notes.length === b.notes.length && a.notes.every((n, i) => n === b.notes[i]);
 
-/** Écrit des contenus dans une copie de l'état. */
-function write(state: GameState, contents: readonly { cell: number; content: CellContent }[]): GameState {
+const extrasOf = (state: GameState): Extras => ({
+  struck: state.struck,
+  virtualCages: state.virtualCages,
+});
+
+/** Écrit des contenus de cases et, éventuellement, des « extras » dans une copie de l'état. */
+function write(state: GameState, cells: readonly CellChange[], side: 'before' | 'after', extras?: Extras) {
   const values = [...state.values];
   const notes = [...state.notes];
-  for (const { cell, content } of contents) {
-    values[cell] = content.value;
-    notes[cell] = [...content.notes];
+  for (const change of cells) {
+    values[change.cell] = change[side].value;
+    notes[change.cell] = [...change[side].notes];
   }
-  return { ...state, values, notes };
+  return { ...state, values, notes, ...(extras ?? {}) };
 }
 
-/** Applique une action du joueur : les cases qui changent vraiment forment une entrée d'historique. */
-function act(
-  state: GameState,
-  next: (cell: number, current: CellContent) => CellContent,
-  cells: Iterable<number>,
-) {
-  const changes: CellChange[] = [];
-  for (const cell of new Set(cells)) {
+/** Enregistre une action : seules les cases qui changent vraiment entrent dans l'historique. */
+function commit(state: GameState, contents: ReadonlyMap<number, CellContent>, extras?: Extras): GameState {
+  const cells: CellChange[] = [];
+  for (const [cell, after] of contents) {
     const before = contentOf(state, cell);
-    const after = next(cell, before);
-    if (!sameContent(before, after)) changes.push({ cell, before, after });
+    if (!sameContent(before, after)) cells.push({ cell, before, after });
   }
-  if (changes.length === 0) return state;
-  const written = write(
-    state,
-    changes.map((c) => ({ cell: c.cell, content: c.after })),
-  );
-  return { ...written, undo: [...state.undo, changes], redo: [] };
+  if (cells.length === 0 && !extras) return state;
+  const change: Change = extras ? { cells, extras: { before: extrasOf(state), after: extras } } : { cells };
+  return { ...write(state, cells, 'after', extras), undo: [...state.undo, change], redo: [] };
+}
+
+/** Cases vues par une case : sa ligne, sa colonne, son bloc et sa cage. */
+export function seenCells(puzzle: Puzzle, cell: number): number[] {
+  const cage = puzzle.cages[cageIndexByCell(puzzle)[cell]];
+  return [...new Set([...PEERS[cell], ...cage.cells.filter((c) => c !== cell)])];
 }
 
 /**
- * Chiffre définitif dans les cases sélectionnées : il remplace leurs notes.
- * Si toutes les cases contiennent déjà ce chiffre, il est retiré (un second appui efface).
+ * Chiffre définitif dans les cases sélectionnées : il remplace leurs notes. Si toutes les cases
+ * contiennent déjà ce chiffre, il est retiré (un second appui efface).
+ * Avec le nettoyage automatique (section 9), le chiffre posé disparaît des notes des cases qu'il voit,
+ * dans la même action (un seul « Annuler » défait le tout).
  */
-export function setDigit(state: GameState, cells: readonly number[], digit: number): GameState {
-  if (state.completed) return state;
-  const all = cells.length > 0 && cells.every((c) => state.values[c] === digit);
-  return act(state, () => ({ value: all ? 0 : digit, notes: [] }), cells);
+export function setDigit(
+  state: GameState,
+  puzzle: Puzzle,
+  cells: readonly number[],
+  digit: number,
+): GameState {
+  if (state.completed || cells.length === 0) return state;
+  const erase = cells.every((c) => state.values[c] === digit);
+  const contents = new Map<number, CellContent>();
+  for (const cell of cells) contents.set(cell, { value: erase ? 0 : digit, notes: [] });
+  if (!erase && state.aids.autoCleanNotes) {
+    for (const cell of cells) {
+      for (const peer of seenCells(puzzle, cell)) {
+        if (contents.has(peer) || state.values[peer] || !state.notes[peer].includes(digit)) continue;
+        contents.set(peer, { value: 0, notes: state.notes[peer].filter((n) => n !== digit) });
+      }
+    }
+  }
+  return commit(state, contents);
 }
 
 /**
@@ -104,27 +216,24 @@ export function toggleNote(state: GameState, cells: readonly number[], digit: nu
   if (state.completed) return state;
   const empty = cells.filter((c) => state.values[c] === 0);
   const all = empty.length > 0 && empty.every((c) => state.notes[c].includes(digit));
-  return act(
-    state,
-    (_, current) => ({
+  const contents = new Map<number, CellContent>();
+  for (const cell of empty) {
+    const notes = state.notes[cell];
+    contents.set(cell, {
       value: 0,
-      notes: all
-        ? current.notes.filter((n) => n !== digit)
-        : current.notes.includes(digit)
-          ? current.notes
-          : [...current.notes, digit],
-    }),
-    empty,
-  );
+      notes: all ? notes.filter((n) => n !== digit) : notes.includes(digit) ? notes : [...notes, digit],
+    });
+  }
+  return commit(state, contents);
 }
 
 /** Vide les cases sélectionnées (chiffres et notes). */
 export function eraseCells(state: GameState, cells: readonly number[]): GameState {
   if (state.completed) return state;
-  return act(state, () => ({ value: 0, notes: [] }), cells);
+  return commit(state, new Map(cells.map((c) => [c, { value: 0, notes: [] }])));
 }
 
-/** Vide toute la grille (annulable). */
+/** Vide toute la grille (annulable). Les cages virtuelles et combinaisons barrées restent. */
 export function eraseAll(state: GameState): GameState {
   return eraseCells(
     state,
@@ -158,8 +267,41 @@ export function candidates(puzzle: Puzzle, values: readonly number[], cell: numb
 /** « Remplir toutes les notes » : chaque case vide reçoit tous ses candidats, dans l'ordre croissant. */
 export function fillAllNotes(state: GameState, puzzle: Puzzle): GameState {
   if (state.completed) return state;
-  const empty = state.values.flatMap((v, cell) => (v === 0 ? [cell] : []));
-  return act(state, (cell) => ({ value: 0, notes: candidates(puzzle, state.values, cell) }), empty);
+  const contents = new Map<number, CellContent>();
+  state.values.forEach((v, cell) => {
+    if (v === 0) contents.set(cell, { value: 0, notes: candidates(puzzle, state.values, cell) });
+  });
+  return commit(state, contents);
+}
+
+/** Copie des combinaisons barrées, sans celles d'une cage. */
+function withoutKey(struck: Record<string, number[]>, key: string): Record<string, number[]> {
+  return Object.fromEntries(Object.entries(struck).filter(([k]) => k !== key));
+}
+
+/** Barre ou rétablit une combinaison (masque de chiffres) dans la fenêtre des combinaisons d'une cage. */
+export function toggleCombination(state: GameState, key: string, combo: number): GameState {
+  if (state.completed) return state;
+  const current = state.struck[key] ?? [];
+  const next = current.includes(combo) ? current.filter((m) => m !== combo) : [...current, combo];
+  const struck = withoutKey(state.struck, key);
+  if (next.length > 0) struck[key] = next;
+  return commit(state, new Map(), { struck, virtualCages: state.virtualCages });
+}
+
+/** Ajoute une cage virtuelle (au moins une case, somme de 1 à 405). */
+export function addVirtualCage(state: GameState, cells: readonly number[], sum: number): GameState {
+  if (state.completed || cells.length === 0 || sum < 1 || sum > 405) return state;
+  const id = state.virtualCages.reduce((max, v) => Math.max(max, v.id), 0) + 1;
+  const cage: VirtualCage = { id, sum, cells: [...new Set(cells)].sort((a, b) => a - b) };
+  return commit(state, new Map(), { struck: state.struck, virtualCages: [...state.virtualCages, cage] });
+}
+
+/** Supprime une cage virtuelle (et les combinaisons barrées qui lui étaient associées). */
+export function removeVirtualCage(state: GameState, id: number): GameState {
+  if (state.completed) return state;
+  const struck = withoutKey(state.struck, `v${id}`);
+  return commit(state, new Map(), { struck, virtualCages: state.virtualCages.filter((v) => v.id !== id) });
 }
 
 export function canUndo(state: GameState): boolean {
@@ -172,22 +314,27 @@ export function canRedo(state: GameState): boolean {
 
 export function undo(state: GameState): GameState {
   if (!canUndo(state)) return state;
-  const changes = state.undo[state.undo.length - 1];
-  const written = write(
-    state,
-    changes.map((c) => ({ cell: c.cell, content: c.before })),
-  );
-  return { ...written, undo: state.undo.slice(0, -1), redo: [...state.redo, changes] };
+  const change = state.undo[state.undo.length - 1];
+  return {
+    ...write(state, change.cells, 'before', change.extras?.before),
+    undo: state.undo.slice(0, -1),
+    redo: [...state.redo, change],
+  };
 }
 
 export function redo(state: GameState): GameState {
   if (!canRedo(state)) return state;
-  const changes = state.redo[state.redo.length - 1];
-  const written = write(
-    state,
-    changes.map((c) => ({ cell: c.cell, content: c.after })),
-  );
-  return { ...written, undo: [...state.undo, changes], redo: state.redo.slice(0, -1) };
+  const change = state.redo[state.redo.length - 1];
+  return {
+    ...write(state, change.cells, 'after', change.extras?.after),
+    undo: [...state.undo, change],
+    redo: state.redo.slice(0, -1),
+  };
+}
+
+/** Change les aides de la partie (ce n'est pas une action annulable). */
+export function setAids(state: GameState, aids: Aids): GameState {
+  return { ...state, aids: { ...aids } };
 }
 
 export function isFull(state: GameState): boolean {

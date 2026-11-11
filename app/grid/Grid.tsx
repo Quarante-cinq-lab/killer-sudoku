@@ -12,8 +12,26 @@ const SUM_FONT = 19;
 const DIGIT_FONT = 60;
 const NOTE_FONT = 24;
 
+/** Marques ajoutées par les aides et l'indice (chaque ensemble peut être vide). */
+export interface GridMarks {
+  /** Ligne, colonne et bloc de la case sélectionnée. */
+  units: ReadonlySet<number>;
+  /** Cases qui contiennent le chiffre de la case sélectionnée. */
+  sameDigit: ReadonlySet<number>;
+  /** Cases en conflit (doublon ou somme impossible). */
+  conflicts: ReadonlySet<number>;
+  /** Chiffres faux trouvés par la vérification. */
+  wrong: ReadonlySet<number>;
+  /** Cases utilisées par l'indice en cours. */
+  hint: ReadonlySet<number>;
+  virtualCages: readonly { id: number; sum: number; cells: readonly number[] }[];
+}
+
+const VIRTUAL_INSET = 15;
+
 interface Props {
   puzzle: Puzzle;
+  marks: GridMarks;
   values: readonly number[];
   notes: readonly (readonly number[])[];
   selection: readonly number[];
@@ -88,7 +106,70 @@ function Notes({ cell, notes }: { cell: number; notes: readonly number[] }) {
   );
 }
 
-export function Grid({ puzzle, values, notes, selection, focus, hidden, onSelect }: Props) {
+/** Un carré de fond par case, avec la classe CSS donnée. */
+function CellRects({
+  cells,
+  className,
+  prefix,
+}: {
+  cells: Iterable<number>;
+  className: string;
+  prefix: string;
+}) {
+  return (
+    <>
+      {[...cells].map((cell) => (
+        <rect
+          key={prefix + cell}
+          x={colOf(cell) * CELL}
+          y={rowOf(cell) * CELL}
+          width={CELL}
+          height={CELL}
+          className={className}
+        />
+      ))}
+    </>
+  );
+}
+
+/** Cages virtuelles : pointillé d'une autre couleur, tracé plus à l'intérieur, somme en bas à gauche. */
+function VirtualCages({ cages }: { cages: GridMarks['virtualCages'] }) {
+  return (
+    <>
+      {cages.map((cage) => {
+        const path = segmentsPath(
+          cageSegments({ cages: [{ sum: cage.sum, cells: [...cage.cells] }] }, 0, VIRTUAL_INSET),
+        );
+        const anchor = Math.min(...cage.cells);
+        const x = colOf(anchor) * CELL;
+        const y = rowOf(anchor) * CELL;
+        const width = String(cage.sum).length * SUM_FONT * 0.6 + 6;
+        return (
+          <g key={cage.id}>
+            <path d={path} className="virtual-cage-line" />
+            <rect
+              x={x + VIRTUAL_INSET + 2}
+              y={y + CELL - VIRTUAL_INSET - SUM_FONT - 3}
+              width={width}
+              height={SUM_FONT + 2}
+              className="virtual-sum-bg"
+            />
+            <text
+              x={x + VIRTUAL_INSET + 5}
+              y={y + CELL - VIRTUAL_INSET - 5}
+              fontSize={SUM_FONT}
+              className="virtual-sum"
+            >
+              {cage.sum}
+            </text>
+          </g>
+        );
+      })}
+    </>
+  );
+}
+
+export function Grid({ puzzle, marks, values, notes, selection, focus, hidden, onSelect }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const drag = useRef<number[] | null>(null);
   const owner = useMemo(() => cageIndexByCell(puzzle), [puzzle]);
@@ -138,30 +219,21 @@ export function Grid({ puzzle, values, notes, selection, focus, hidden, onSelect
       onPointerCancel={endDrag}
     >
       <rect x={0} y={0} width={GRID} height={GRID} className="grid-bg" />
-      {!hidden &&
-        focusCage >= 0 &&
-        puzzle.cages[focusCage].cells.map((cell) => (
-          <rect
-            key={`c${cell}`}
-            x={colOf(cell) * CELL}
-            y={rowOf(cell) * CELL}
-            width={CELL}
-            height={CELL}
-            className="cage-highlight"
-          />
-        ))}
-      {!hidden &&
-        selection.map((cell) => (
-          <rect
-            key={`s${cell}`}
-            x={colOf(cell) * CELL}
-            y={rowOf(cell) * CELL}
-            width={CELL}
-            height={CELL}
-            className="selected-fill"
-          />
-        ))}
+      {!hidden && (
+        <>
+          <CellRects cells={marks.units} className="unit-highlight" prefix="u" />
+          {focusCage >= 0 && (
+            <CellRects cells={puzzle.cages[focusCage].cells} className="cage-highlight" prefix="c" />
+          )}
+          <CellRects cells={marks.sameDigit} className="same-digit" prefix="d" />
+          <CellRects cells={marks.hint} className="hint-highlight" prefix="h" />
+          <CellRects cells={selection} className="selected-fill" prefix="s" />
+          <CellRects cells={marks.conflicts} className="conflict-fill" prefix="x" />
+          <CellRects cells={marks.wrong} className="wrong-fill" prefix="w" />
+        </>
+      )}
       <Frame puzzle={puzzle} />
+      {!hidden && <VirtualCages cages={marks.virtualCages} />}
       {!hidden &&
         selection.map((cell) => (
           <rect
@@ -183,7 +255,7 @@ export function Grid({ puzzle, values, notes, selection, focus, hidden, onSelect
               y={(rowOf(cell) + 0.5) * CELL + DIGIT_FONT * 0.36}
               fontSize={DIGIT_FONT}
               textAnchor="middle"
-              className="digit"
+              className={marks.wrong.has(cell) || marks.conflicts.has(cell) ? 'digit error' : 'digit'}
             >
               {value}
             </text>
