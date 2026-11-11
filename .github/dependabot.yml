@@ -1,12 +1,28 @@
-# Alertes et mises à jour de sécurité des bibliothèques (cahier des charges, section 12.1).
+# Mises à jour des bibliothèques (cahier des charges, section 12.1).
+# - Une seule proposition par mois pour les bibliothèques npm, et une pour les actions GitHub.
+# - Les correctifs de sécurité n'attendent pas le mois : ils arrivent dès qu'une faille est connue,
+#   regroupés eux aussi en une seule proposition.
+# Chaque proposition est vérifiée automatiquement (types, lint, tests, construction) avant fusion.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      bibliotheques-npm:
+        applies-to: version-updates
+        patterns: ['*']
+      correctifs-securite-npm:
+        applies-to: security-updates
+        patterns: ['*']
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 2
+    groups:
+      actions-github:
+        patterns: ['*']

@@ -1,27 +1,31 @@
-# Publication automatique sur GitHub Pages à chaque envoi sur la branche main :
-# vérifications (types, lint, tests), construction, puis mise en ligne.
+# Vérifications à chaque pull request, et publication sur GitHub Pages à chaque envoi sur main :
+# types, lint, tests, audit des dépendances, construction, puis mise en ligne (sur main seulement).
 name: Publication
 
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
+# Droits minimaux par défaut ; seule la publication reçoit le droit d'écrire sur Pages.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
+    name: Vérifications et construction
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -31,17 +35,24 @@ jobs:
       - run: npm test
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run build
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v6
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
   deploy:
+    name: Mise en ligne
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

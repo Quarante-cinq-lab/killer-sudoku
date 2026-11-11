@@ -164,8 +164,10 @@ fermée (balayer vers le haut dans le sélecteur d'applications). Les parties sa
 
 - À chaque envoi sur la branche `main`, GitHub vérifie le code (types, lint, tests, audit des dépendances),
   construit l'application et la publie (`.github/workflows/deploy.yml`).
+- Chaque pull request passe par les mêmes vérifications, sans publication : ne fusionner qu'avec une coche verte.
 - Réglage à faire une fois sur GitHub : **Settings → Pages → Source : GitHub Actions**.
-- Dependabot signale les bibliothèques à mettre à jour (`.github/dependabot.yml`). Activer aussi
+- Dependabot (`.github/dependabot.yml`) propose une mise à jour groupée par mois pour les bibliothèques npm et
+  une pour les actions GitHub. Les correctifs de sécurité arrivent sans attendre, regroupés eux aussi. Activer
   **Settings → Code security → Dependabot alerts**.
 
 ## Sécurité et confidentialité
