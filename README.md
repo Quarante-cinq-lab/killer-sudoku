@@ -3,8 +3,11 @@
 Jeu de killer sudoku personnel, hors ligne, installable sur iPad (PWA). Le cahier des charges complet est dans
 [docs/cahier-des-charges.md](docs/cahier-des-charges.md).
 
-État : **étape 4** (écran de jeu jouable sur l'iPad, banque de 50 grilles HARD et 50 EXPERT). Les outils killer et
-les aides viendront à l'étape 5, la bibliothèque et les statistiques à l'étape 6.
+**Projet personnel, non destiné à la diffusion. Tous droits réservés.** Voir [LICENSE](LICENSE).
+
+État : **MVP** (étapes 1 à 4 et 7) : jouable sur l'iPad, installable et hors ligne, avec une banque de 50 grilles
+HARD et 50 EXPERT. Les outils killer et les aides viendront à l'étape 5, la bibliothèque et les statistiques à
+l'étape 6.
 
 ## Installer
 
@@ -29,6 +32,8 @@ npm install
 | `npm run dev`                                   | lance l'application sur le PC (http://localhost:5173)   |
 | `npm run dev:ipad`                              | idem, accessible depuis l'iPad sur le même Wi-Fi        |
 | `npm run build`                                 | produit la version finale dans `dist/`                  |
+| `npm run preview`                               | sert la version finale (http://localhost:4173)          |
+| `npm run icons`                                 | redessine l'icône et les écrans de démarrage            |
 
 ## Tester sur l'iPad (pendant le développement)
 
@@ -136,3 +141,36 @@ Pour voir le raisonnement d'une grille de la banque : `npm run trace -- data/ban
 - **Sauvegarde** : chaque action est enregistrée ; « Reprendre » sur l'accueil rouvre la dernière partie.
 - **Clavier physique** (facultatif) : chiffres, Maj + chiffre pour une note, flèches, Retour arrière pour
   effacer, Cmd + Z pour annuler, Cmd + Maj + Z pour rétablir.
+
+## Installer l'application sur l'iPad
+
+L'application est publiée sur GitHub Pages (voir plus bas). Sur l'iPad :
+
+1. Ouvrir **Safari** (pas un autre navigateur) à l'adresse de l'application.
+2. Toucher le bouton **Partager** (carré avec une flèche vers le haut), puis **Sur l'écran d'accueil**, puis
+   **Ajouter**.
+3. Lancer **Killer Sudoku** depuis son icône : l'application s'ouvre en plein écran, sans barre Safari.
+4. Au premier lancement, elle garde une copie de tous ses fichiers : elle fonctionne ensuite en **mode avion**.
+
+Les parties sont enregistrées sur l'iPad seulement (IndexedDB), jamais en ligne.
+
+**Mises à jour** : quand une nouvelle version est publiée, l'application la télécharge en arrière-plan à
+l'ouverture suivante (avec Internet). Elle s'applique au lancement d'après, une fois l'application complètement
+fermée (balayer vers le haut dans le sélecteur d'applications). Les parties sauvegardées ne sont pas touchées.
+
+## Publication (GitHub Pages)
+
+- À chaque envoi sur la branche `main`, GitHub vérifie le code (types, lint, tests, audit des dépendances),
+  construit l'application et la publie (`.github/workflows/deploy.yml`).
+- Réglage à faire une fois sur GitHub : **Settings → Pages → Source : GitHub Actions**.
+- Dependabot signale les bibliothèques à mettre à jour (`.github/dependabot.yml`). Activer aussi
+  **Settings → Code security → Dependabot alerts**.
+
+## Sécurité et confidentialité
+
+- Aucune donnée collectée, aucun appel réseau en dehors du chargement de l'application.
+- La version publiée applique une politique de sécurité stricte (`Content-Security-Policy`,
+  `default-src 'self'`) : elle ne charge que ses propres fichiers.
+- Pas d'indexation par les moteurs de recherche (`noindex` et `robots.txt`).
+- Les commits sont signés d'un pseudonyme et de l'adresse « noreply » de GitHub (section 12.1 du cahier des
+  charges).

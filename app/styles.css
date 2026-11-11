@@ -183,6 +183,17 @@ button.secondary {
   font-size: 15px;
 }
 
+.legal {
+  margin-top: 48px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.legal p {
+  margin: 4px 0;
+}
+
 /* ---------- Écran de jeu ---------- */
 
 .game {

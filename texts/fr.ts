@@ -13,6 +13,8 @@ export const TEXTS = {
     allPlayed: (level: string) =>
       `Toutes les grilles ${level} ont été jouées : voici celle que tu as terminée il y a le plus longtemps.`,
     loading: 'Chargement…',
+    legal: 'Projet personnel, non destiné à la diffusion. Tous droits réservés.',
+    version: (app: string, engine: string) => `Version ${app} · moteur ${engine}`,
   },
 
   game: {

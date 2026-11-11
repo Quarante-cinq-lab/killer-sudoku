@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { LEVELS, type Level } from '../engine/model';
+import { ENGINE_VERSION } from '../engine/version';
 import { TEXTS } from '../texts/fr';
 import { BANKS, findPuzzle } from './bank';
 import { formatTime } from './game/clock';
@@ -141,6 +142,10 @@ export function App() {
           );
         })}
       </div>
+      <footer className="legal">
+        <p>{H.legal}</p>
+        <p>{H.version(__APP_VERSION__, ENGINE_VERSION)}</p>
+      </footer>
     </div>
   );
 }

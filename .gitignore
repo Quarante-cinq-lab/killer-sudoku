@@ -6,3 +6,15 @@ coverage/
 Thumbs.db
 .vite/
 .claude/settings.local.json
+
+# Fichiers locaux et secrets (cahier des charges, section 12.1)
+.env
+.env.*
+*.local
+*.tmp
+.vscode/
+.idea/
+# Sauvegardes exportées depuis l'application (elles contiennent la progression du joueur)
+sauvegardes/
+*.sauvegarde.json
+killer-sudoku-sauvegarde*.json
