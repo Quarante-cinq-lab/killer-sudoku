@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { parseBank } from '../../engine/bank';
 import hardBank from '../../data/bank-hard.json';
+import { makeRecord, serializeBank } from '../../engine/bank';
+import { parseSolution } from '../../engine/model';
+import fixtures from '../../engine/__tests__/fixtures/killer-fixtures.json';
+import { readExtraBank } from '../bank';
 import { newGame } from '../game/state';
 import type { SavedGame } from '../storage';
 import { backupFileName, buildBackup, parseBackup, type BackupData } from './backup';
@@ -130,5 +134,29 @@ describe('export et import de la sauvegarde', () => {
     const parsed = parseBackup({ ...buildBackup({ ...data, games: [old] }, '0.7.0', 'x') });
     expect(parsed.games[0].version).toBe(2);
     expect(parsed.games[0].undo[0]).toEqual({ cells: [] });
+  });
+});
+
+describe('import d’une banque complémentaire', () => {
+  const fixture = fixtures.fixtures.find((f) => f.expectedCount === 1);
+  if (!fixture) throw new Error('grille de test manquante');
+  const fresh = makeRecord('HARD', 900, { cages: fixture.cages }, parseSolution(fixture.solution), { score: 200, techniques: {}, entryPoints: 3 }, '2026-11-12');
+  const file = (puzzles: unknown[]) => JSON.parse(serializeBank({ version: 1, level: 'HARD', puzzles: puzzles as never })) as unknown;
+
+  it('ajoute une grille nouvelle', () => {
+    const result = readExtraBank(file([fresh]), records);
+    expect(result.added.map((p) => p.id)).toEqual(['HRD-0900']);
+    expect(result.skipped).toBe(0);
+  });
+
+  it('écarte un identifiant déjà présent, ou une grille déjà connue sous un autre numéro', () => {
+    const copy = { ...records[1], id: 'HRD-0901', number: 901 };
+    const result = readExtraBank(file([records[0], copy, fresh]), records);
+    expect(result.added.map((p) => p.id)).toEqual(['HRD-0900']);
+    expect(result.skipped).toBe(2);
+  });
+
+  it('refuse un fichier qui n’est pas une banque', () => {
+    expect(() => readExtraBank({ puzzles: 3 }, records)).toThrow();
   });
 });

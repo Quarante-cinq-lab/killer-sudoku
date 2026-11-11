@@ -100,9 +100,9 @@ function GridNotes({ cell, notes }: { cell: number; notes: readonly number[] }) 
       {notes.map((d) => (
         <text
           key={d}
-          x={left + 22 + ((d - 1) % 3) * 28}
-          y={top + 34 + Math.floor((d - 1) / 3) * 27}
-          fontSize={21}
+          x={left + 27 + ((d - 1) % 3) * 25}
+          y={top + 42 + Math.floor((d - 1) / 3) * 23}
+          fontSize={19}
           className="note"
           textAnchor="middle"
         >

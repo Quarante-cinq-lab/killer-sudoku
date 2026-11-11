@@ -7,9 +7,9 @@
   --muted: #5d5a6b;
   --line-thin: #c9c7d3;
   --line-thick: #1d1b26;
-  --cage: #8a81a6; /* liseré gris-mauve des cages */
+  --cage: var(--cage-light, #8a81a6); /* liseré des cages (réglable) */
   --sum: #2b2838;
-  --cage-highlight: #dcf1dc; /* cage de la case sélectionnée : vert clair */
+  --cage-highlight: var(--highlight-light, #dcf1dc); /* cage de la case sélectionnée (réglable) */
   --selected: #d4e5ff;
   --selected-border: #2f6fde;
   --digit: #1f3a93;
@@ -27,19 +27,27 @@
   --error-fill: #fde2e2;
   --virtual: #d9730d; /* cages virtuelles : pointillé orangé */
   --struck: #9a97a8;
+  /* Couleurs des niveaux dans les statistiques (palette validée pour les daltonismes). */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
 }
 
+/* Thème sombre : automatique (réglage de l'iPad), sauf si le joueur a choisi « Clair » dans les Réglages. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
     --bg: #15141b;
     --surface: #1f1e27;
     --fg: #ecebf3;
     --muted: #a9a6b8;
     --line-thin: #3d3b49;
     --line-thick: #d9d7e3;
-    --cage: #a198c2;
+    --cage: var(--cage-dark, #a198c2);
     --sum: #e4e2ee;
-    --cage-highlight: #213b27;
+    --cage-highlight: var(--highlight-dark, #213b27);
     --selected: #22385e;
     --selected-border: #6ea0ff;
     --digit: #a9c6ff;
@@ -57,7 +65,52 @@
     --error-fill: #4a2326;
     --virtual: #f0a050;
     --struck: #77748a;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
   }
+}
+
+/* Thème sombre choisi dans les Réglages. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #15141b;
+  --surface: #1f1e27;
+  --fg: #ecebf3;
+  --muted: #a9a6b8;
+  --line-thin: #3d3b49;
+  --line-thick: #d9d7e3;
+  --cage: var(--cage-dark, #a198c2);
+  --sum: #e4e2ee;
+  --cage-highlight: var(--highlight-dark, #213b27);
+  --selected: #22385e;
+  --selected-border: #6ea0ff;
+  --digit: #a9c6ff;
+  --note: #c2bfd0;
+  --key: #2a2934;
+  --key-note: #312c46;
+  --key-note-fg: #cbbfff;
+  --accent: #5b8ff0;
+  --accent-fg: #0d1426;
+  --shadow: 0 1px 2px rgb(0 0 0 / 40%);
+  --unit-highlight: #25242e;
+  --same-digit: #2c3a5c;
+  --hint: #4a4220;
+  --error: #ff8a80;
+  --error-fill: #4a2326;
+  --virtual: #f0a050;
+  --struck: #77748a;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
 }
 
 * {
@@ -957,5 +1010,185 @@ button.secondary {
   text-align: left;
   padding-left: 18px;
   font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ---------- Statistiques ---------- */
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.stats-card {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+
+.stats-card h2,
+.chart-legend span,
+.swatch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stats-card h2 {
+  margin: 0 0 8px;
+  font-size: 19px;
+}
+
+.stats-card h2 i,
+.chart-legend i {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.stats-card dl {
+  margin: 0;
+}
+
+.stats-card dl div {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line-thin);
+  font-size: 15px;
+}
+
+.stats-card dt {
+  color: var(--muted);
+}
+
+.stats-card dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.stats-chart {
+  margin-top: 24px;
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+
+.stats-chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stats-chart-head h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.chart-grid {
+  stroke: var(--line-thin);
+  stroke-width: 1;
+}
+
+.chart-axis {
+  fill: var(--muted);
+  font-size: 13px;
+}
+
+.chart-label {
+  fill: var(--fg);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.chart-dot {
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.chart-tooltip {
+  min-height: 1.4em;
+  margin: 6px 0;
+  font-size: 15px;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats-table th,
+.stats-table td {
+  text-align: left;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--line-thin);
+}
+
+/* ---------- Réglages ---------- */
+
+.settings-section {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-top: 12px;
+  box-shadow: var(--shadow);
+}
+
+.settings-section h2 {
+  margin: 0 0 8px;
+  font-size: 19px;
+}
+
+.settings-section h3 {
+  margin: 14px 0 8px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.settings-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.settings-buttons button {
+  min-height: 48px;
+  padding: 0 18px;
+  font-size: 16px;
+}
+
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  margin-right: 6px;
+  display: inline-block;
+}
+
+.about-list {
+  margin: 0;
+  padding-left: 18px;
   line-height: 1.6;
 }

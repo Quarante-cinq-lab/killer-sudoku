@@ -3,6 +3,7 @@
  * moment de la construction (aucun téléchargement pendant le jeu).
  */
 import { parseBank } from '../engine/bank';
+import { puzzleFingerprint } from '../engine/generator/fingerprint';
 import { LEVELS, parseSolution, type Level, type PuzzleRecord } from '../engine/model';
 
 const files = import.meta.glob<unknown>('../data/bank-*.json', { eager: true, import: 'default' });
@@ -42,11 +43,21 @@ export function registerExtraPuzzles(records: readonly PuzzleRecord[]): void {
 }
 
 /**
- * Lit un fichier de banque complémentaire (section 6.4) : il est vérifié grille par grille, et une grille
- * dont l'identifiant existe déjà est écartée (jamais remplacée). Renvoie les grilles nouvelles.
+ * Lit un fichier de banque complémentaire (section 6.4) : il est vérifié grille par grille. Une grille
+ * dont l'identifiant existe déjà, ou identique à une grille connue (à une symétrie près), est écartée :
+ * rien n'est jamais remplacé. Renvoie les grilles nouvelles.
  */
-export function readExtraBank(raw: unknown, knownIds: ReadonlySet<string> = new Set(byId.keys())) {
+export function readExtraBank(raw: unknown, known: readonly PuzzleRecord[] = [...byId.values()]) {
   const bank = parseBank(raw);
-  const added = bank.puzzles.filter((p) => !knownIds.has(p.id));
+  const ids = new Set(known.map((p) => p.id));
+  const prints = new Set(known.map(puzzleFingerprint));
+  const added: PuzzleRecord[] = [];
+  for (const p of bank.puzzles) {
+    const print = puzzleFingerprint(p);
+    if (ids.has(p.id) || prints.has(print)) continue;
+    ids.add(p.id);
+    prints.add(print);
+    added.push(p);
+  }
   return { level: bank.level, added, skipped: bank.puzzles.length - added.length };
 }

@@ -1,5 +1,5 @@
 /**
- * Application : accueil, écran de jeu, bibliothèque (et, à l'étape 6b, statistiques et réglages).
+ * Application : accueil, écran de jeu, bibliothèque, statistiques et réglages.
  * Les données (parties, historique, favoris, réglages) sont chargées depuis IndexedDB au démarrage, puis
  * relues à chaque retour à l'accueil ou à la bibliothèque.
  */
@@ -7,24 +7,32 @@ import { useEffect, useState } from 'react';
 import { LEVELS, type Level } from '../engine/model';
 import { ENGINE_VERSION } from '../engine/version';
 import { TEXTS } from '../texts/fr';
-import { BANKS, findPuzzle, registerExtraPuzzles } from './bank';
+import { BANKS, findPuzzle, readExtraBank, registerExtraPuzzles } from './bank';
+import { applyAppearance, saveFile } from './data/appearance';
+import { backupFileName, buildBackup, parseBackup } from './data/backup';
 import { libraryItems, type HistoryEntry, type LibraryItem } from './data/history';
 import { DEFAULT_SETTINGS, type Settings } from './data/settings';
 import { formatTime } from './game/clock';
 import { GameScreen } from './game/GameScreen';
 import { newGame } from './game/state';
 import { LibraryScreen } from './library/LibraryScreen';
+import { SettingsScreen } from './settings/SettingsScreen';
+import { StatsScreen } from './stats/StatsScreen';
 import {
+  addExtraPuzzles,
   addHistory,
+  loadAll,
   loadCurrentId,
   loadExtraPuzzles,
   loadFavorites,
   loadGames,
   loadHistory,
   loadSettings,
+  replaceAll,
   requestPersistence,
   saveCurrentId,
   saveGame,
+  saveSettings,
   setFavorite,
   type SavedGame,
 } from './storage';
@@ -35,6 +43,8 @@ type Screen =
   | { kind: 'loading' }
   | { kind: 'home' }
   | { kind: 'library' }
+  | { kind: 'stats' }
+  | { kind: 'settings' }
   | { kind: 'game'; game: SavedGame; key: number };
 
 const today = (): string => new Date().toLocaleDateString('sv-SE');
@@ -77,7 +87,9 @@ export function App() {
     void requestPersistence();
     void (async () => {
       registerExtraPuzzles(await loadExtraPuzzles());
-      setSettings(await loadSettings());
+      const loaded = await loadSettings();
+      applyAppearance(loaded);
+      setSettings(loaded);
       setData(await loadData());
       setScreen({ kind: 'home' });
     })();
@@ -89,7 +101,7 @@ export function App() {
     setScreen({ kind: 'game', game, key: nextScreenKey() });
   };
 
-  const goTo = (kind: 'home' | 'library') => {
+  const goTo = (kind: 'home' | 'library' | 'stats' | 'settings') => {
     void loadData().then((d) => {
       setData(d);
       setScreen({ kind });
@@ -152,7 +164,66 @@ export function App() {
     setData({ ...data, favorites });
   };
 
+  const changeSettings = (next: Settings) => {
+    setSettings(next);
+    applyAppearance(next);
+    void saveSettings(next);
+  };
+
+  /** Export de la sauvegarde : feuille de partage de l'iPad (Enregistrer dans Fichiers). */
+  const exportBackup = async () => {
+    const backup = buildBackup(await loadAll(), __APP_VERSION__, new Date().toISOString());
+    await saveFile(backupFileName(today()), JSON.stringify(backup));
+  };
+
+  /** Import : vérifie le fichier, puis (après confirmation) remplace toute la sauvegarde. */
+  const readBackup = (text: string) => {
+    const backup = parseBackup(JSON.parse(text));
+    return {
+      games: backup.games.length,
+      history: backup.history.length,
+      apply: async () => {
+        await replaceAll(backup);
+        registerExtraPuzzles(backup.extraPuzzles);
+        const restored = await loadSettings();
+        changeSettings(restored);
+        setData(await loadData());
+      },
+    };
+  };
+
+  const importBank = async (text: string) => {
+    const { added, skipped } = readExtraBank(JSON.parse(text));
+    await addExtraPuzzles(added);
+    registerExtraPuzzles(added);
+    return { added: added.length, skipped };
+  };
+
   if (screen.kind === 'loading') return <p className="loading">{H.loading}</p>;
+
+  if (screen.kind === 'stats') {
+    return (
+      <StatsScreen
+        history={data.history}
+        levels={LEVELS.filter((l) => BANKS[l].length > 0)}
+        onBack={() => goTo('home')}
+      />
+    );
+  }
+
+  if (screen.kind === 'settings') {
+    return (
+      <SettingsScreen
+        settings={settings}
+        gridsPerLevel={Object.fromEntries(LEVELS.map((l) => [l, BANKS[l].length])) as Record<Level, number>}
+        onChange={changeSettings}
+        onExport={exportBackup}
+        onReadBackup={readBackup}
+        onImportBank={importBank}
+        onBack={() => goTo('home')}
+      />
+    );
+  }
 
   if (screen.kind === 'game') {
     const record = findPuzzle(screen.game.puzzleId);
@@ -228,6 +299,12 @@ export function App() {
       <div className="home-links">
         <button type="button" onClick={() => goTo('library')}>
           {H.library}
+        </button>
+        <button type="button" onClick={() => goTo('stats')}>
+          {H.stats}
+        </button>
+        <button type="button" onClick={() => goTo('settings')}>
+          {H.settings}
         </button>
       </div>
       <footer className="legal">

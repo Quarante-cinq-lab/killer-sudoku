@@ -165,6 +165,72 @@ export const TEXTS = {
     score: (n: number) => `Score ${n}`,
   },
 
+  stats: {
+    title: 'Statistiques',
+    back: 'Accueil',
+    finished: 'Grilles terminées',
+    average: 'Temps moyen',
+    median: 'Temps médian',
+    best: 'Meilleur temps',
+    withoutHint: 'Sans indice',
+    streak: 'Série sans indice',
+    percent: (n: number) => `${n} %`,
+    none: '—',
+    chartTitle: 'Temps moyen par mois',
+    chartEmpty: 'Le graphique apparaîtra après la première grille terminée.',
+    minutes: (n: number) => `${n} min`,
+    tooltip: (level: string, month: string, minutes: number, count: number) =>
+      `${level} · ${month} : ${minutes} min (${count} grille${count > 1 ? 's' : ''})`,
+    showTable: 'Voir en tableau',
+    showChart: 'Voir le graphique',
+    month: 'Mois',
+  },
+
+  settings: {
+    title: 'Réglages',
+    back: 'Accueil',
+    aidsTitle: 'Aides par défaut des nouvelles parties',
+    displayTitle: 'Affichage',
+    notes: 'Notes',
+    notesInline: 'En ligne',
+    notesGrid: 'Grille 3 × 3',
+    theme: 'Thème',
+    themes: { auto: 'Automatique', light: 'Clair', dark: 'Sombre' },
+    cageColor: 'Liseré des cages',
+    highlightColor: 'Surlignage de la cage',
+    colors: {
+      mauve: 'Mauve',
+      ardoise: 'Ardoise',
+      sarcelle: 'Sarcelle',
+      brique: 'Brique',
+      vert: 'Vert',
+      bleu: 'Bleu',
+      jaune: 'Jaune',
+      rose: 'Rose',
+    },
+    backupTitle: 'Sauvegarde',
+    backupHelp:
+      'Tes parties sont enregistrées sur cet iPad seulement. Exporte-les de temps en temps dans Fichiers : Safari peut effacer les données d’une application peu utilisée.',
+    export: 'Exporter la sauvegarde',
+    import: 'Importer une sauvegarde',
+    importConfirm: (games: number, history: number) =>
+      `Remplacer toute la sauvegarde actuelle par celle du fichier (${games} partie(s), ${history} ligne(s) d’historique) ?`,
+    importDone: 'Sauvegarde importée.',
+    exportDone: 'Sauvegarde exportée.',
+    bankTitle: 'Banque de grilles',
+    bankHelp:
+      'Ajoute des grilles depuis un fichier de banque. Les grilles déjà présentes ne sont jamais remplacées.',
+    bankImport: 'Importer un fichier de banque',
+    bankDone: (added: number, skipped: number) =>
+      `${added} grille(s) ajoutée(s)${skipped ? `, ${skipped} déjà présente(s)` : ''}.`,
+    readError: (message: string) => `Fichier refusé : ${message}`,
+    aboutTitle: 'À propos',
+    gridsPerLevel: 'Grilles par niveau',
+    legal: 'Projet personnel, non destiné à la diffusion. Tous droits réservés.',
+    privacy:
+      'Aucune donnée ne quitte cet iPad : pas de compte, pas de mesure d’audience, aucun appel réseau.',
+  },
+
   explanations: {
     naked_single: 'Il ne reste qu’un seul chiffre possible dans cette case.',
     hidden_single: 'Dans cette zone, ce chiffre ne peut aller que dans une seule case.',

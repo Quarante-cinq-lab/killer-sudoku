@@ -5,9 +5,9 @@ Jeu de killer sudoku personnel, hors ligne, installable sur iPad (PWA). Le cahie
 
 **Projet personnel, non destiné à la diffusion. Tous droits réservés.** Voir [LICENSE](LICENSE).
 
-État : **étape 5** (outils killer, aides et indice progressif), après le MVP (étapes 1 à 4 et 7) : jouable sur
-l'iPad, installable et hors ligne, avec une banque de 50 grilles HARD et 50 EXPERT. La bibliothèque et les
-statistiques viendront à l'étape 6.
+État : **étape 6** (bibliothèque, historique, statistiques, réglages, sauvegarde), après le MVP et l'étape 5 :
+jouable sur l'iPad, installable et hors ligne, avec une banque de 50 grilles HARD et 50 EXPERT. Restent la banque
+complète, les niveaux supérieurs (groupes C et D) et le calibrage (étape 8).
 
 ## Installer
 
@@ -158,6 +158,24 @@ Pour voir le raisonnement d'une grille de la banque : `npm run trace -- data/ban
   3e, la déduction est appliquée (annulable). Si la grille contient une erreur, l'indice la signale.
   Le calcul part des chiffres et des notes du joueur (`engine/hint.ts`).
 - Annuler et Rétablir couvrent aussi les combinaisons barrées, les cages virtuelles et les indices.
+
+## Bibliothèque, statistiques et réglages (étape 6)
+
+- **Accueil** : Reprendre, une tuile par niveau (grilles jamais jouées), Bibliothèque, Statistiques, Réglages.
+- **Bibliothèque** : toutes les grilles avec miniature et statut (jamais jouée, en cours avec le temps,
+  terminée avec le meilleur temps, favorite ★) ; filtres par niveau, statut et favoris ; tris par numéro,
+  meilleur temps, dernière partie ou difficulté. Pour chaque grille : jouer ou reprendre, recommencer,
+  favori, historique des parties.
+- **Fin de partie** : temps, indices, vérifications, ressenti (Trop facile, Bon niveau, Trop dur), puis
+  Grille suivante, Rejouer ou Bibliothèque. Une partie recommencée avant la fin est notée « abandonnée ».
+- **Statistiques** par niveau (terminées, temps moyen et médian, meilleur temps, parties sans indice,
+  série en cours) et graphique du temps moyen par mois, consultable aussi en tableau.
+- **Réglages** : aides par défaut des nouvelles parties, notes en ligne ou en grille 3 × 3, thème,
+  couleurs, export et import de la sauvegarde, import d'une banque complémentaire, À propos.
+- **Sauvegarde** : tout est enregistré dans IndexedDB à chaque action (`app/storage.ts`, schéma
+  versionné avec migration automatique). L'export ouvre la feuille de partage de l'iPad : choisir
+  « Enregistrer dans Fichiers ». L'import vérifie le fichier et demande confirmation avant de remplacer.
+  Les grilles importées en complément figurent dans l'export, pour que leur historique reste utilisable.
 
 ## Installer l'application sur l'iPad
 
