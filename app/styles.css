@@ -952,6 +952,9 @@ button.secondary {
 }
 
 .library-card {
+  /* Avec près de 1 000 grilles, le navigateur ne dessine que les cartes visibles à l'écran. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
   display: flex;
   flex-direction: column;
   gap: 6px;

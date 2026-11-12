@@ -1,7 +1,7 @@
 {
   "name": "killer-sudoku-ipad",
   "private": true,
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Killer sudoku personnel pour iPad (PWA hors ligne)",
   "type": "module",
   "engines": {

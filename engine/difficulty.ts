@@ -17,6 +17,11 @@ export interface GenerationProfile {
   cageSizes: [number, number][];
   /** Nombre maximal de retouches pour rendre la solution unique. */
   maxRepairs: number;
+  /**
+   * Recherche ciblée (niveaux difficiles) : partir d'une grille du niveau `from`, puis retoucher ses cages
+   * au plus `steps` fois, en ne gardant que les retouches qui la rendent plus difficile.
+   */
+  harden?: { from: Level; steps: number };
 }
 
 export interface DifficultyConfig {
@@ -99,7 +104,16 @@ export function parseDifficultyConfig(raw: unknown): DifficultyConfig {
     if (!cageSizes.some(([, w]) => w > 0)) fail(`generation.${level}.cageSizes : aucun poids positif.`);
     const maxRepairs = g.maxRepairs;
     if (typeof maxRepairs !== 'number' || maxRepairs < 0) fail(`generation.${level}.maxRepairs invalide.`);
-    generation[level] = { cageSizes, maxRepairs };
+    const harden = g.harden as { from?: unknown; steps?: unknown } | undefined;
+    if (harden !== undefined) {
+      if (!LEVELS.includes(harden.from as Level) || typeof harden.steps !== 'number' || harden.steps < 1)
+        fail(`generation.${level}.harden doit être { "from": niveau, "steps": nombre }.`);
+      generation[level] = {
+        cageSizes,
+        maxRepairs,
+        harden: { from: harden.from as Level, steps: harden.steps },
+      };
+    } else generation[level] = { cageSizes, maxRepairs };
   }
   const bottleneck = o.bottleneck as { enabled?: unknown } | undefined;
   return {

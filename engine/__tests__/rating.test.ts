@@ -60,10 +60,21 @@ describe('classement par niveau', () => {
   });
 
   it('niveaux supérieurs : le plus élevé l’emporte', () => {
-    expect(classify(summary({ B: 4, C: 2 }), expertCages).level).toBe('DIABOLIQUE');
-    expect(classify(summary({ C: 5 }), expertCages).level).toBe('EXTREME');
-    expect(classify(summary({ D: 1 }), expertCages).level).toBe('EXTREME');
-    expect(classify(summary({ D: 3 }), expertCages).level).toBe('ULTIME');
+    // Intervalles de score vides : on ne teste ici que les conditions sur les techniques.
+    const config = withConfig((c) => {
+      for (const level of ['DIABOLIQUE', 'EXTREME', 'ULTIME'] as const) c.levels[level].score = [null, null];
+    });
+    const fewUnique = { ...expertCages, uniqueCombo: 1 };
+    expect(classify(summary({ B: 4, C: 2 }), fewUnique, config).level).toBe('DIABOLIQUE');
+    expect(classify(summary({ C: 5 }), fewUnique, config).level).toBe('EXTREME');
+    expect(classify(summary({ D: 1 }), fewUnique, config).level).toBe('EXTREME');
+    expect(classify(summary({ D: 3 }), fewUnique, config).level).toBe('ULTIME');
+  });
+
+  it('ULTIME exige aussi un score parmi les plus élevés d’EXTRÊME', () => {
+    const fewUnique = { ...expertCages, uniqueCombo: 1 };
+    expect(classify({ ...summary({ D: 3 }), score: 1500 }, fewUnique).level).toBe('ULTIME');
+    expect(classify({ ...summary({ D: 3 }), score: 800 }, fewUnique).rejection).toBe('score_hors_limites');
   });
 
   it('rejette une grille non résolue ou aux cages non conformes', () => {

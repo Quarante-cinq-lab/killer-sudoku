@@ -76,6 +76,24 @@ const inRange = (value: number, [min, max]: Range): boolean =>
   (min === null || value >= min) && (max === null || value <= max);
 
 /**
+ * Niveau atteint par les seules conditions sur les techniques (sans score ni forme des cages) :
+ * l'indice dans LEVELS du niveau le plus élevé dont une alternative est remplie, ou -1.
+ */
+export function conditionLevel(summary: Summary, config: DifficultyConfig = DIFFICULTY_CONFIG): number {
+  const count = (key: string): number =>
+    (GROUPS as readonly string[]).includes(key)
+      ? summary.groups[key as Group]
+      : (summary.techniques[key] ?? 0);
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    const ok = config.levels[LEVELS[i]].conditions.some((alt) =>
+      Object.entries(alt).every(([key, r]) => inRange(count(key), r)),
+    );
+    if (ok) return i;
+  }
+  return -1;
+}
+
+/**
  * Classe une grille : on retient le niveau le plus élevé dont les conditions sur les techniques sont
  * remplies, puis on vérifie son intervalle de score, la forme des cages et l'absence de goulot isolé.
  */
@@ -85,19 +103,8 @@ export function classify(
   config: DifficultyConfig = DIFFICULTY_CONFIG,
 ): { level: Level | null; rejection: RejectionCode | null } {
   if (!summary.solved) return { level: null, rejection: 'non_resolue' };
-  const count = (key: string): number =>
-    (GROUPS as readonly string[]).includes(key)
-      ? summary.groups[key as Group]
-      : (summary.techniques[key] ?? 0);
-
-  const index = [...LEVELS.keys()]
-    .reverse()
-    .find((i) =>
-      config.levels[LEVELS[i]].conditions.some((alt) =>
-        Object.entries(alt).every(([key, r]) => inRange(count(key), r)),
-      ),
-    );
-  if (index === undefined) return { level: null, rejection: 'entre_deux_niveaux' };
+  const index = conditionLevel(summary, config);
+  if (index < 0) return { level: null, rejection: 'entre_deux_niveaux' };
   const level = LEVELS[index];
   const lc = config.levels[level];
 

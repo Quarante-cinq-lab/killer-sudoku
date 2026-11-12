@@ -346,6 +346,8 @@ export const TEXTS = {
     unicite_impossible: 'les retouches n’ont pas suffi à rendre la solution unique',
     calcul_trop_long: 'la vérification de l’unicité a été trop longue',
     doublon: 'elle existe déjà dans la banque (à une symétrie près)',
+    depart_impossible: 'la grille de départ n’a pas obtenu le niveau requis',
+    durcissement_insuffisant: 'les retouches n’ont pas atteint le niveau visé',
     autre_niveau: 'elle est d’un autre niveau (option --only)',
   },
 

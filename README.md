@@ -5,9 +5,9 @@ Jeu de killer sudoku personnel, hors ligne, installable sur iPad (PWA). Le cahie
 
 **Projet personnel, non destiné à la diffusion. Tous droits réservés.** Voir [LICENSE](LICENSE).
 
-État : **étape 6** (bibliothèque, historique, statistiques, réglages, sauvegarde), après le MVP et l'étape 5 :
-jouable sur l'iPad, installable et hors ligne, avec une banque de 50 grilles HARD et 50 EXPERT. Restent la banque
-complète, les niveaux supérieurs (groupes C et D) et le calibrage (étape 8).
+État : **banque complète** (930 grilles, cinq niveaux : 300 HARD, 300 EXPERT, 200 DIABOLIQUE, 100 EXTRÊME, 30
+ULTIME) et toutes les techniques des groupes A à D. L'application est jouable sur l'iPad, installable et hors
+ligne. Reste le calibrage (étape 8), qui demande de jouer une dizaine de grilles par niveau.
 
 ## Installer
 
@@ -127,10 +127,15 @@ Chaque grille retenue est écrite aussitôt dans `data/`. On peut arrêter avec 
 rien n'est perdu, et une grille existante n'est jamais modifiée. Les identifiants (`HRD-0001`,
 `EXP-0001`…) ne changent jamais et un numéro n'est jamais réutilisé.
 
-La banque actuelle a été produite avec les graines 20261111 (HARD) et 20261112 (EXPERT), en une quinzaine de
-secondes. Le test `scripts/bank-integrity.test.ts` vérifie que chaque grille a une solution unique, se résout
-par déduction et retrouve son niveau et son score. Si l'on modifie la configuration de difficulté, ce test
-signale les grilles dont la notation a changé.
+**Niveaux difficiles (recherche ciblée).** Les grilles tirées au hasard sont presque toujours soit
+faciles, soit impossibles à finir par déduction. Pour DIABOLIQUE, EXTRÊME et ULTIME, le générateur part donc
+d'une grille EXPERT et retouche ses cages pas à pas (`engine/generator/harden.ts`) : une retouche n'est gardée
+que si la grille reste à solution unique, résolue par déduction, plus difficile, et sans dépasser le niveau
+visé. Réglages : `generation.<NIVEAU>.harden` dans `engine/difficulty.config.json`.
+
+La banque complète (300 HARD, 300 EXPERT, 200 DIABOLIQUE, 100 EXTRÊME, 30 ULTIME) a été produite en un peu plus
+d'une heure sur 7 cœurs. Les 50 premières grilles HARD et EXPERT viennent des graines 20261111 et 20261112, le
+reste des graines 20261113 à 20261117.
 
 Pour voir le raisonnement d'une grille de la banque : `npm run trace -- data/bank-expert.json 12` (12e grille).
 

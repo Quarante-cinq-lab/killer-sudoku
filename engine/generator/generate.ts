@@ -5,10 +5,12 @@ import { createRng } from '../random';
 import { ratePuzzle, type Rating, type RejectionCode } from '../rating';
 import { randomSolutionGrid } from '../solutionGrid';
 import { growCages, type CageLimits } from './cages';
+import { hardenPuzzle } from './harden';
 import { makeUnique, type RepairFailure } from './repair';
 
 /** Pourquoi une grille candidate n'est pas retenue. */
-export type GenerationRejection = 'decoupage_impossible' | RepairFailure | RejectionCode;
+export type GenerationRejection =
+  'decoupage_impossible' | 'depart_impossible' | 'durcissement_insuffisant' | RepairFailure | RejectionCode;
 
 export interface Candidate {
   seed: number;
@@ -54,9 +56,10 @@ export function generateCandidate(
   target: Level,
   config: DifficultyConfig = DIFFICULTY_CONFIG,
 ): Candidate {
+  const profile = config.generation[target];
+  if (profile.harden) return hardenCandidate(seed, target, profile.harden.from, config);
   const rng = createRng(seed);
   const solution = randomSolutionGrid(rng);
-  const profile = config.generation[target];
   const limits = cageLimits(target, config);
   const base = { seed, target, solution };
 
@@ -96,5 +99,43 @@ export function generateCandidate(
     rating,
     level: rating.level,
     rejection: rating.rejection,
+  };
+}
+
+/**
+ * Niveaux difficiles (recherche ciblée) : une grille de départ du niveau `from`, puis des retouches qui la
+ * durcissent jusqu'au niveau visé (voir harden.ts).
+ */
+function hardenCandidate(seed: number, target: Level, from: Level, config: DifficultyConfig): Candidate {
+  const start = generateCandidate(seed, from, config);
+  if (!start.puzzle || !start.rating || start.level !== from) {
+    return { ...start, target, puzzle: null, rating: null, level: null, rejection: 'depart_impossible' };
+  }
+  const hardened = hardenPuzzle(
+    createRng(seed ^ 0x5bd1e995),
+    start.puzzle,
+    start.rating,
+    start.solution,
+    target,
+    config,
+  );
+  if (!hardened) {
+    return {
+      ...start,
+      target,
+      puzzle: null,
+      rating: null,
+      level: null,
+      rejection: 'durcissement_insuffisant',
+    };
+  }
+  return {
+    ...start,
+    target,
+    puzzle: hardened.puzzle,
+    repairs: start.repairs + hardened.steps,
+    rating: hardened.rating,
+    level: hardened.rating.level,
+    rejection: hardened.rating.rejection,
   };
 }

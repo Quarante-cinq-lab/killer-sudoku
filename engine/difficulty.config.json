@@ -8,10 +8,12 @@
     "  Chaque alternative associe un groupe (A, B, C, D) ou une technique à [minimum, maximum] d'étapes (null = sans limite).",
     "levels.<NIVEAU>.score : [minimum, maximum] du score total (null = sans limite).",
     "  HARD et EXPERT : fixés à l’étape 3 d’après 600 grilles générées (les grilles les plus faciles et les plus longues sont écartées). Les autres niveaux le seront avec les groupes C et D.",
+    "  DIABOLIQUE et EXTRÊME : fixés d'après 40 grilles de chaque niveau (bloc 2). ULTIME : score minimal = 90e centile des scores EXTRÊME (« les 10 % les plus élevés », section 5.2).",
     "levels.<NIVEAU>.cages : contraintes de forme des cages pour ce niveau.",
     "On retient le niveau le plus élevé dont les conditions sont remplies.",
     "generation.<NIVEAU>.cageSizes : poids de chaque taille de cage visée lors du découpage (\"3\": 4 = 4 fois plus souvent qu’une taille de poids 1).",
-    "generation.<NIVEAU>.maxRepairs : nombre maximal de retouches locales pour rendre la solution unique avant d’abandonner la grille."
+    "generation.<NIVEAU>.maxRepairs : nombre maximal de retouches locales pour rendre la solution unique avant d’abandonner la grille.",
+    "generation.<NIVEAU>.harden : recherche ciblée. On part d'une grille du niveau « from », puis on retouche ses cages au plus « steps » fois, en gardant seulement les retouches qui la rendent plus difficile sans dépasser le niveau visé."
   ],
   "techniques": {
     "naked_single": {
@@ -196,7 +198,7 @@
           "D": [0, 0]
         }
       ],
-      "score": [null, null],
+      "score": [450, 1000],
       "cages": {
         "minSize": 2,
         "maxSize": 6,
@@ -213,7 +215,7 @@
           "C": [5, null]
         }
       ],
-      "score": [null, null],
+      "score": [520, 1200],
       "cages": {
         "minSize": 2,
         "maxSize": 6,
@@ -227,7 +229,7 @@
           "D": [3, null]
         }
       ],
-      "score": [null, null],
+      "score": [970, null],
       "cages": {
         "minSize": 2,
         "maxSize": 6,
@@ -264,7 +266,11 @@
         "5": 2,
         "6": 1
       },
-      "maxRepairs": 40
+      "maxRepairs": 40,
+      "harden": {
+        "from": "EXPERT",
+        "steps": 80
+      }
     },
     "EXTREME": {
       "cageSizes": {
@@ -274,7 +280,11 @@
         "5": 3,
         "6": 2
       },
-      "maxRepairs": 40
+      "maxRepairs": 40,
+      "harden": {
+        "from": "EXPERT",
+        "steps": 80
+      }
     },
     "ULTIME": {
       "cageSizes": {
@@ -284,7 +294,11 @@
         "5": 3,
         "6": 2
       },
-      "maxRepairs": 40
+      "maxRepairs": 40,
+      "harden": {
+        "from": "EXPERT",
+        "steps": 80
+      }
     }
   }
 }

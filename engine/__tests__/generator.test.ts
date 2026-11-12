@@ -6,6 +6,10 @@ import { growCages, partitionCells, pickSize, respectsLimits } from '../generato
 import { puzzleFingerprint, transformPuzzle } from '../generator/fingerprint';
 import { cageLimits, generateCandidate, isLevelReachable } from '../generator/generate';
 import { connectedParts, makeUnique, resplit } from '../generator/repair';
+import { hardenPuzzle } from '../generator/harden';
+import { conditionLevel, ratePuzzle } from '../rating';
+import { parseBank } from '../bank';
+import hardBank from '../../data/bank-hard.json';
 import { isConnected, isSolutionOf, parseSolution, validatePuzzle, type Puzzle } from '../model';
 import { createRng } from '../random';
 import { randomSolutionGrid } from '../solutionGrid';
@@ -198,5 +202,72 @@ describe('grille candidate', () => {
     const bad = structuredClone(rawConfig) as { generation: { HARD: { cageSizes: Record<string, number> } } };
     bad.generation.HARD.cageSizes = { '9': 1 };
     expect(() => parseDifficultyConfig(bad)).toThrow(/generation.HARD/);
+  });
+});
+
+describe('recherche ciblée (durcissement)', () => {
+  const hardConfig = structuredClone(DIFFICULTY_CONFIG);
+  hardConfig.generation.EXPERT = { ...hardConfig.generation.EXPERT, harden: { from: 'HARD', steps: 40 } };
+  const starts = parseBank(hardBank).puzzles.slice(0, 6);
+
+  it('durcit des grilles HARD jusqu’au niveau EXPERT, en gardant la même solution unique', () => {
+    let reached = 0;
+    starts.forEach((record, i) => {
+      const startRating = ratePuzzle(record, hardConfig);
+      const solution = parseSolution(record.solution);
+      const result = hardenPuzzle(createRng(i + 1), record, startRating, solution, 'EXPERT', hardConfig);
+      if (!result) return;
+      reached++;
+      expect(result.rating.level).toBe('EXPERT');
+      expect(result.rating.solved).toBe(true);
+      expect(countSolutions(result.puzzle).count).toBe(1);
+      expect(isSolutionOf(result.puzzle, solution)).toBe(true);
+      expect(result.puzzle.cages.every((c) => c.cells.length >= 2)).toBe(true);
+    });
+    expect(reached).toBeGreaterThan(0);
+  });
+
+  it('ne dépasse jamais le niveau visé', () => {
+    const record = starts[0];
+    const result = hardenPuzzle(
+      createRng(9),
+      record,
+      ratePuzzle(record, hardConfig),
+      parseSolution(record.solution),
+      'EXPERT',
+      hardConfig,
+    );
+    if (result) expect(conditionLevel(result.rating, hardConfig)).toBeLessThanOrEqual(1);
+  });
+
+  it('les niveaux difficiles utilisent la recherche ciblée à partir d’EXPERT', () => {
+    for (const level of ['DIABOLIQUE', 'EXTREME', 'ULTIME'] as const) {
+      expect(DIFFICULTY_CONFIG.generation[level].harden?.from).toBe('EXPERT');
+    }
+    const bad = structuredClone(rawConfig) as { generation: { ULTIME: { harden: unknown } } };
+    bad.generation.ULTIME.harden = { from: 'FACILE', steps: 10 };
+    expect(() => parseDifficultyConfig(bad)).toThrow(/harden/);
+  });
+});
+
+describe('niveau atteint par les techniques', () => {
+  const summary = (
+    groups: Partial<Record<'A' | 'B' | 'C' | 'D', number>>,
+    techniques: Record<string, number> = {},
+  ) => ({
+    solved: true,
+    score: 0,
+    techniques,
+    groups: { A: 0, B: 0, C: 0, D: 0, ...groups },
+    hardestPoints: 0,
+  });
+
+  it('donne le plus haut niveau dont les conditions sont remplies', () => {
+    expect(conditionLevel(summary({ A: 9 }, { rule45_single: 3 }))).toBe(0);
+    expect(conditionLevel(summary({ B: 2 }))).toBe(1);
+    expect(conditionLevel(summary({ C: 2 }))).toBe(2);
+    expect(conditionLevel(summary({ D: 1 }))).toBe(3);
+    expect(conditionLevel(summary({ D: 3 }))).toBe(4);
+    expect(conditionLevel(summary({ B: 1 }))).toBe(-1);
   });
 });
