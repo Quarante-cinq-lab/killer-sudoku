@@ -57,6 +57,8 @@ export interface Aids {
   autoCleanNotes: boolean;
   filterCombinations: boolean;
   autoNotes: boolean;
+  /** Mode Somme : afficher la règle des 45 (somme des cases qui dépassent d'une zone complète). */
+  sumRule45: boolean;
   check: boolean;
   hint: boolean;
 }
@@ -68,6 +70,7 @@ export const DEFAULT_AIDS: Aids = {
   autoCleanNotes: true,
   filterCombinations: true,
   autoNotes: true,
+  sumRule45: true,
   check: true,
   hint: true,
 };
@@ -80,6 +83,7 @@ export const PURIST_AIDS: Aids = {
   autoCleanNotes: false,
   filterCombinations: false,
   autoNotes: false,
+  sumRule45: false,
   check: false,
   hint: false,
 };

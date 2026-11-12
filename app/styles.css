@@ -29,6 +29,7 @@
   --conflict-fill: #fdebd3;
   --virtual: #d9730d; /* cages virtuelles : pointillé orangé */
   --struck: #9a97a8;
+  --sum-fill: #e6dcfb; /* cages du mode Somme */
   /* Couleurs des niveaux dans les statistiques (palette validée pour les daltonismes). */
   --series-1: #2a78d6;
   --series-2: #eb6834;
@@ -69,6 +70,7 @@
     --conflict-fill: #47331d;
     --virtual: #f0a050;
     --struck: #77748a;
+    --sum-fill: #3a2f5c;
     --series-1: #3987e5;
     --series-2: #d95926;
     --series-3: #199e70;
@@ -108,6 +110,7 @@
   --conflict-fill: #47331d;
   --virtual: #f0a050;
   --struck: #77748a;
+  --sum-fill: #3a2f5c;
   --series-1: #3987e5;
   --series-2: #d95926;
   --series-3: #199e70;
@@ -1274,4 +1277,27 @@ button.secondary {
 
 .calc-pad button:last-child {
   grid-column: span 3;
+}
+
+/* ---------- Mode Somme (E4) ---------- */
+
+.sum-fill {
+  fill: var(--sum-fill);
+}
+
+.sum-total {
+  display: block;
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sum-rule45 {
+  font-size: 15px;
+  line-height: 1.35;
+  margin: 6px 0 10px;
+}
+
+.sum-panel .chips {
+  align-items: center;
+  margin-top: 8px;
 }

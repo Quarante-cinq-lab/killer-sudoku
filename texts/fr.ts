@@ -45,6 +45,20 @@ export const TEXTS = {
     calculator: 'Calculatrice',
     options: 'Options',
     virtualCages: 'Cages virtuelles',
+    sum: 'Somme',
+    sumTitle: 'Somme de cages',
+    sumTotal: (total: number) => `Σ = ${total}`,
+    sumCounts: (cages: number, cells: number) =>
+      `${cages} cage${cages > 1 ? 's' : ''}, ${cells} case${cells > 1 ? 's' : ''}`,
+    sumHelp: 'Touche les cages à additionner ; touche-les à nouveau pour les retirer.',
+    sumAdd: 'Ajouter :',
+    sumAddCages: 'cages',
+    sumAddCells: 'cases remplies',
+    sumRule45: (zone: string, units: number, outside: number, outsideSum: number) =>
+      outside === 0
+        ? `Exactement ${zone} : 45 × ${units} = ${45 * units}.`
+        : `Couvre ${zone} (45 × ${units} = ${45 * units}) : les ${outside} case${outside > 1 ? 's' : ''} en plus font ${outsideSum}.`,
+    sumCreateVirtual: 'Créer une cage virtuelle',
     eraseAll: 'Tout effacer',
     eraseAllConfirm: 'Effacer tous les chiffres et toutes les notes ?',
     eraseSelection: 'Effacer la sélection',
@@ -65,6 +79,7 @@ export const TEXTS = {
       autoCleanNotes: 'Nettoyage automatique des notes',
       filterCombinations: 'Filtrage des combinaisons',
       autoNotes: 'Notes automatiques',
+      sumRule45: 'Règle des 45 en mode Somme',
       check: 'Vérification',
       hint: 'Indice',
     },

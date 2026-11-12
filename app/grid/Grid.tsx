@@ -24,6 +24,8 @@ export interface GridMarks {
   wrong: ReadonlySet<number>;
   /** Cases utilisées par l'indice en cours. */
   hint: ReadonlySet<number>;
+  /** Cases sélectionnées en mode Somme. */
+  sum: ReadonlySet<number>;
   virtualCages: readonly { id: number; sum: number; cells: readonly number[] }[];
 }
 
@@ -261,6 +263,7 @@ export function Grid({
           )}
           <CellRects cells={marks.sameDigit} className="same-digit" prefix="d" />
           <CellRects cells={marks.hint} className="hint-highlight" prefix="h" />
+          <CellRects cells={marks.sum} className="sum-fill" prefix="m" />
           <CellRects cells={selection} className="selected-fill" prefix="s" />
           <CellRects cells={marks.conflicts} className="conflict-fill" prefix="x" />
           <CellRects cells={marks.wrong} className="wrong-fill" prefix="w" />

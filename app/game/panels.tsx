@@ -8,6 +8,7 @@ import { Icon } from '../icons';
 import type { ComboLine, ComboSource } from './aids';
 import type { Aids, VirtualCage } from './state';
 import { display, pressKey, type CalcKey, type CalcState } from './calculator';
+import type { SumInfo } from './sumMode';
 
 const T = TEXTS.game;
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -364,6 +365,61 @@ export function CalculatorContent({
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** Bandeau du mode Somme (évolution E4) : total, compte, règle des 45, et création d'une cage virtuelle. */
+export function SumContent({
+  info,
+  zoneName,
+  showRule45,
+  kind,
+  onKind,
+  onCreateVirtual,
+}: {
+  info: SumInfo;
+  zoneName: string | null;
+  showRule45: boolean;
+  kind: 'cages' | 'cases';
+  onKind: (kind: 'cages' | 'cases') => void;
+  onCreateVirtual: () => void;
+}) {
+  return (
+    <div className="sum-panel">
+      <strong className="sum-total">{T.sumTotal(info.total)}</strong>
+      <p className="panel-help">{T.sumCounts(info.cageCount, info.cells.length)}</p>
+      {showRule45 && info.rule45 && zoneName && (
+        <p className="sum-rule45">
+          {T.sumRule45(zoneName, info.rule45.units, info.rule45.outside.length, info.rule45.outsideSum)}
+        </p>
+      )}
+      <div className="chips">
+        <span className="panel-help">{T.sumAdd}</span>
+        <button
+          type="button"
+          className={kind === 'cages' ? 'chip on' : 'chip'}
+          onClick={() => onKind('cages')}
+        >
+          {T.sumAddCages}
+        </button>
+        <button
+          type="button"
+          className={kind === 'cases' ? 'chip on' : 'chip'}
+          onClick={() => onKind('cases')}
+        >
+          {T.sumAddCells}
+        </button>
+      </div>
+      {info.cells.length === 0 && <p className="panel-help">{T.sumHelp}</p>}
+      <button
+        type="button"
+        className="calc-list"
+        disabled={info.cells.length === 0}
+        onClick={onCreateVirtual}
+      >
+        {T.sumCreateVirtual}
+      </button>
     </div>
   );
 }

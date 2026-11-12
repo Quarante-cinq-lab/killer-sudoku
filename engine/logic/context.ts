@@ -52,7 +52,7 @@ export function createContext(puzzle: Puzzle, maxDerivedCells = 5): LogicContext
 }
 
 /** Zones de la règle des 45 : blocs, puis bandes de 1 à 9 lignes ou colonnes consécutives. */
-function regions(): { region: Region; cells: number[]; units: number }[] {
+export function rule45Regions(): { region: Region; cells: number[]; units: number }[] {
   const list: { region: Region; cells: number[]; units: number }[] = [];
   for (let b = 0; b < 9; b++)
     list.push({ region: { kind: 'box', from: b, to: b }, cells: [...UNITS[18 + b]], units: 1 });
@@ -88,7 +88,7 @@ function buildDerived(puzzle: Puzzle, cageOf: Int16Array, maxCells: number): Der
     result.push({ region, plus, minus, value });
   };
 
-  for (const { region, cells, units } of regions()) {
+  for (const { region, cells, units } of rule45Regions()) {
     if (cells.some((cell) => cageOf[cell] < 0)) continue;
     const inside = new Set(cells);
     const touching = [...new Set(cells.map((cell) => cageOf[cell]))];

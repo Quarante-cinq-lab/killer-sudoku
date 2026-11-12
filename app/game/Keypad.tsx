@@ -25,8 +25,11 @@ interface Props {
   onFinder: () => void;
   onCalculator: () => void;
   onVirtualCages: () => void;
+  onSum: () => void;
+  /** Mode Somme : les pavés de chiffres et de notes sont inactifs. */
+  padsDisabled: boolean;
   /** Fenêtres ouvertes (boutons affichés enfoncés). */
-  open: { combinations: boolean; finder: boolean; calculator: boolean; virtualCages: boolean };
+  open: { combinations: boolean; finder: boolean; calculator: boolean; virtualCages: boolean; sum: boolean };
 }
 
 function Tool({
@@ -64,20 +67,21 @@ export function Keypad(props: Props) {
         <Tool icon="undo" label={T.undo} onClick={onUndo} enabled={canUndo && !disabled} />
         <Tool icon="redo" label={T.redo} onClick={onRedo} enabled={canRedo && !disabled} />
         <Tool icon="hint" label={T.hint} onClick={props.onHint} enabled={props.hintEnabled && !disabled} />
+        <Tool icon="sum" label={T.sum} onClick={props.onSum} enabled={!disabled} pressed={open.sum} />
       </div>
       <div
         className={props.digitsToPanel ? 'pad pad-digits to-panel' : 'pad pad-digits'}
         aria-label={T.digits}
       >
         {DIGITS.map((d) => (
-          <button key={d} type="button" disabled={disabled} onClick={() => onDigit(d)}>
+          <button key={d} type="button" disabled={disabled || props.padsDisabled} onClick={() => onDigit(d)}>
             {d}
           </button>
         ))}
       </div>
       <div className="pad pad-notes" aria-label={T.notes}>
         {DIGITS.map((d) => (
-          <button key={d} type="button" disabled={disabled} onClick={() => onNote(d)}>
+          <button key={d} type="button" disabled={disabled || props.padsDisabled} onClick={() => onNote(d)}>
             {d}
           </button>
         ))}

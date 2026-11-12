@@ -25,11 +25,14 @@ import {
   wrongCells,
 } from './aids';
 import { emptyCalc, type CalcState } from './calculator';
+import { emptySelection, sumInfo, toggleInSelection, type SumSelection } from './sumMode';
+import { regionName } from '../../engine/logic/describe';
 import { formatTime, now, readClock, startClock, stopClock, stoppedClock, type Clock } from './clock';
 import { Keypad } from './Keypad';
 import {
   AidsContent,
   CalculatorContent,
+  SumContent,
   FinderContent,
   CombinationsContent,
   emptyFinder,
@@ -175,6 +178,10 @@ export function GameScreen(props: Props) {
   // Calculatrice : son état reste tant que la partie est ouverte, même si on ferme sa fenêtre.
   const [calcOpen, setCalcOpen] = useState(false);
   const [calcState, setCalcState] = useState<CalcState>(emptyCalc);
+  // Mode Somme (E4) : sélection de cages entières, effacée à la sortie du mode.
+  const [sumMode, setSumMode] = useState(false);
+  const [sumSel, setSumSel] = useState<SumSelection>(emptySelection);
+  const [sumKind, setSumKind] = useState<'cages' | 'cases'>('cages');
   const [virtualSum, setVirtualSum] = useState('');
   /** Résultat de la dernière vérification : case → chiffre jugé faux (la marque disparaît si on le change). */
   const [checked, setChecked] = useState<ReadonlyMap<number, number>>(new Map());
@@ -417,8 +424,21 @@ export function GameScreen(props: Props) {
               ? new Set([...hint.result.wrongDigits, ...hint.result.missingNotes])
               : EMPTY,
       virtualCages: game.virtualCages,
+      sum: sumMode ? new Set(sumInfo(record, game.values, sumSel).cells) : EMPTY,
     };
-  }, [aids, checked, focus, game.errorMode, game.values, game.virtualCages, hint, record, solution]);
+  }, [
+    aids,
+    checked,
+    focus,
+    game.errorMode,
+    game.values,
+    game.virtualCages,
+    hint,
+    record,
+    solution,
+    sumMode,
+    sumSel,
+  ]);
 
   const ask = (message: string, onConfirm: () => void) => setConfirmation({ message, onConfirm });
   const title = T.title(TEXTS.levels[record.level], record.number);
@@ -471,6 +491,11 @@ export function GameScreen(props: Props) {
           hidden={paused}
           notesLayout={props.notesLayout}
           onSelect={(cells, f) => {
+            if (sumMode) {
+              // Mode Somme : un toucher ajoute ou retire une cage (ou une case remplie) ; pas de glissé.
+              if (cells.length === 1) setSumSel((s) => toggleInSelection(record, game.values, s, f, sumKind));
+              return;
+            }
             setSelection(cells);
             setFocus(f);
           }}
@@ -500,6 +525,11 @@ export function GameScreen(props: Props) {
         hintEnabled={aids.hint}
         onCombinations={() => setCombosOpen((o) => !o)}
         onCalculator={() => setCalcOpen((o) => !o)}
+        onSum={() => {
+          setSumMode((on) => !on);
+          setSumSel(emptySelection());
+        }}
+        padsDisabled={sumMode}
         onFinder={() => {
           setFinderOpen((o) => !o);
           setTarget('finder');
@@ -513,6 +543,7 @@ export function GameScreen(props: Props) {
           finder: finderOpen,
           calculator: calcOpen,
           virtualCages: virtualOpen,
+          sum: sumMode,
         }}
       />
 
@@ -561,6 +592,36 @@ export function GameScreen(props: Props) {
             mayRepeat={(source) => source.virtual && !allDistinct(record, source.cells)}
             onToggle={(key, mask) => update((s) => toggleCombination(s, key, mask))}
           />
+        </FloatingPanel>
+      )}
+
+      {!blocked && sumMode && (
+        <FloatingPanel
+          title={T.sumTitle}
+          start={{ x: 16, y: Math.max(70, window.innerHeight - 520) }}
+          onClose={() => {
+            setSumMode(false);
+            setSumSel(emptySelection());
+          }}
+          compact
+        >
+          {(() => {
+            const info = sumInfo(record, game.values, sumSel);
+            return (
+              <SumContent
+                info={info}
+                zoneName={info.rule45 ? regionName(info.rule45.region) : null}
+                showRule45={aids.sumRule45}
+                kind={sumKind}
+                onKind={setSumKind}
+                onCreateVirtual={() => {
+                  update((s) => addVirtualCage(s, info.cells, info.total));
+                  setSumMode(false);
+                  setSumSel(emptySelection());
+                }}
+              />
+            );
+          })()}
         </FloatingPanel>
       )}
 
