@@ -171,8 +171,8 @@ L'écran de jeu reprend la disposition de l'application de référence : la gril
 ### 7.1 Barre supérieure
 
 - À gauche : le nom de la grille (par exemple « Expert #042 ») et un bouton de retour à l'accueil.
-- À droite : le bouton pause et le chronomètre (format hh:mm:ss).
-- Un menu donne accès à : recommencer la grille, ajuster les aides de la partie, mettre la grille en favori.
+- À droite : le compteur d'erreurs (« Erreurs : 1 / 3 », si le mode erreurs est actif, section 7.6), le bouton pause et le chronomètre (format hh:mm:ss).
+- Un menu donne accès à : recommencer la grille (section 7.7), ajuster les aides de la partie, mettre la grille en favori.
 
 ### 7.2 Grille
 
@@ -180,7 +180,7 @@ L'écran de jeu reprend la disposition de l'application de référence : la gril
 - Traits : fins et gris entre les cases, épais et noirs entre les blocs 3 × 3.
 - Cages : un liseré gris-mauve d'environ 3 px, tracé à l'intérieur des cases avec un retrait d'environ 4 px. C'est le style de l'application de référence ; la couleur et l'épaisseur sont réglables.
 - Somme de la cage : en petit, en haut à gauche de sa première case (celle située le plus en haut, puis le plus à gauche), sur un fond blanc pour rester lisible.
-- Chiffres définitifs : en grand, centrés dans la case.
+- Chiffres définitifs : en grand, centrés dans la case. Un chiffre faux s'affiche en rouge si le mode erreurs est actif (section 7.6).
 - Notes : affichées par défaut en ligne, au centre de la case, dans l'ordre de saisie (comme dans l'application de référence). En option, une grille 3 × 3 triée.
 - Case sélectionnée : bordure de couleur. Toute sa cage est surlignée en vert clair.
 - Sélection multiple : en faisant glisser le doigt ou l'Apple Pencil, qui fonctionne comme un doigt.
@@ -189,10 +189,10 @@ L'écran de jeu reprend la disposition de l'application de référence : la gril
 
 | Zone | Contenu |
 | --- | --- |
-| Colonne gauche | Annuler, Rétablir, Indice |
+| Colonne gauche | Annuler, Rétablir, Indice, Somme de cages (« + », section 7.4) |
 | Pavé chiffres (grand) | 1 à 9 : saisie d'un chiffre définitif |
 | Pavé notes (plus petit, autre teinte) | 1 à 9 : ajoute la note, ou la retire si elle est déjà présente |
-| Colonne droite | Combinaisons de la cage sélectionnée (icône calculatrice), Calculatrice libre (icône bloc-notes), Menu Options (icône crayon), Cages virtuelles |
+| Colonne droite | Combinaisons de la cage (de la case sélectionnée), Combinaisons (somme et nombre de cases au choix), Calculatrice, Menu Options (icône crayon), Cages virtuelles |
 
 - Un chiffre définitif remplace les notes de la case.
 - Une note s'applique à toutes les cases sélectionnées.
@@ -201,9 +201,40 @@ L'écran de jeu reprend la disposition de l'application de référence : la gril
 
 ### 7.4 Outils killer
 
-- **Fenêtre des combinaisons** : elle s'ouvre sur la cage sélectionnée et liste toutes les combinaisons possibles pour sa taille et sa somme. Un toucher barre ou rétablit une combinaison. Ces choix sont mémorisés par cage et sauvegardés. La fenêtre est flottante, déplaçable, et se ferme par un « x ».
-- **Calculatrice** : fenêtre flottante indépendante de la grille, comme dans l'application de référence. Deux champs, « Somme » et « Nombre de cases », se remplissent avec le pavé chiffres, chiffre par chiffre. Une touche « 0 » permet d'écrire les nombres à deux chiffres (1 puis 0 pour 10, 2 puis 5 pour 25). Une touche « C » vide le champ actif. Un toucher sur un champ le rend actif. Le bouton « Lister les combinaisons » affiche toutes les combinaisons possibles, par exemple 25 en 4 cases. En option, on peut ajouter des chiffres obligatoires ou exclus.
-- **Cages virtuelles** : on sélectionne des cases et on leur attribue une somme déduite. Elles s'affichent en pointillé d'une autre couleur, alimentent la fenêtre des combinaisons et peuvent être supprimées.
+- **Combinaisons de la cage** : fenêtre qui s'ouvre sur la cage de la case sélectionnée (et sur ses cages virtuelles) et liste toutes les combinaisons possibles pour sa taille et sa somme. Un toucher barre ou rétablit une combinaison. Ces choix sont mémorisés par cage et sauvegardés. La fenêtre est flottante, déplaçable, et se ferme par un « x ».
+- **Combinaisons** (anciennement « Calculatrice » ; évolution E3) : fenêtre flottante indépendante de la grille, comme dans l'application de référence. Deux champs, « Somme » et « Nombre de cases », se remplissent avec le pavé chiffres, chiffre par chiffre. Une touche « 0 » permet d'écrire les nombres à deux chiffres (1 puis 0 pour 10, 2 puis 5 pour 25). Une touche « C » vide le champ actif. Un toucher sur un champ le rend actif. Le bouton « Lister les combinaisons » affiche toutes les combinaisons possibles, par exemple 25 en 4 cases. En option, on peut ajouter des chiffres obligatoires ou exclus.
+- **Calculatrice** (évolution E3) : une vraie calculatrice, avec sa propre icône. Fenêtre flottante et déplaçable, qui ne masque pas la grille plus que nécessaire. Touches 0 à 9, +, −, ×, ÷, =, C (tout effacer) et ← (effacer le dernier chiffre). Elle affiche l'opération en cours et le résultat. Le dernier résultat reste affiché quand on ferme puis rouvre la calculatrice pendant la partie.
+- Les fenêtres « Combinaisons » et « Calculatrice » ne sont pas des aides : elles restent disponibles même avec le préréglage Puriste.
+
+**Somme de cages (bouton « + », évolution E4)**
+
+Le bouton « + » sert à additionner rapidement les sommes de plusieurs cages, par exemple pour appliquer la règle des 45. *Fonctionnement à confirmer par l'utilisateur avant le développement :*
+
+1. Le bouton « + » active le mode Somme.
+2. En mode Somme, toucher une cage la sélectionne entièrement (toutes ses cases sont surlignées dans une couleur dédiée) ; la toucher à nouveau la désélectionne.
+3. Un bandeau flottant affiche en permanence :
+   - le total des sommes des cages sélectionnées (par exemple « Σ = 67 ») ;
+   - le nombre de cages et de cases sélectionnées (par exemple « 4 cages, 11 cases ») ;
+   - si les cases sélectionnées couvrent une ou plusieurs lignes, colonnes ou blocs complets, plus quelques cases : la différence avec 45 × (nombre d'unités), c'est-à-dire la somme des cases qui dépassent. Cet affichage est une aide désactivable (section 9), car il donne une partie du raisonnement.
+4. On peut aussi ajouter des cases isolées déjà remplies : leur chiffre est alors ajouté au total.
+5. Toucher à nouveau « + » ou « Fermer » quitte le mode Somme et efface la sélection.
+6. Depuis le bandeau, un bouton « Créer une cage virtuelle » transforme la sélection en cage virtuelle.
+
+**Cages virtuelles (refonte, évolution E5)**
+
+Une cage virtuelle sert à noter une déduction du type « ces cases font X au total », puis à exploiter cette information comme une vraie cage. *Refonte à confirmer par l'utilisateur avant le développement ; la version actuelle reste en place jusqu'à cette confirmation.*
+
+1. **Création rapide** : on sélectionne des cases, puis « Créer une cage virtuelle ». L'application propose la somme quand elle peut la calculer :
+   - sélection = réunion de cages entières → somme de ces cages ;
+   - sélection = une ligne, une colonne ou un bloc moins des cages entières → 45 moins ces cages ;
+   - sinon, le joueur saisit la somme lui-même.
+2. **Affichage** : contour en pointillé d'une couleur distincte, avec la somme dans un petit cadre de la même couleur. Plusieurs cages virtuelles peuvent coexister, chacune avec sa couleur.
+3. **Exploitation** :
+   - si les cases de la cage virtuelle sont toutes dans une même ligne, colonne ou un même bloc (donc sans chiffre répété), la fenêtre « Combinaisons de la cage » fonctionne dessus, avec possibilité de barrer ;
+   - sinon, elle affiche seulement la somme et le nombre de cases, et indique que des chiffres peuvent se répéter ;
+   - le signalement des conflits vérifie aussi les cages virtuelles (somme dépassée, combinaison impossible).
+4. **Gestion** : une liste des cages virtuelles permet de les masquer, les afficher ou les supprimer. Elles sont sauvegardées avec la partie et effacées par « Recommencer la grille ».
+5. Une cage virtuelle fausse (somme incompatible avec la solution) n'est jamais signalée comme fausse : c'est une note du joueur.
 
 **Menu Options (icône crayon)**
 
@@ -212,14 +243,43 @@ Une fenêtre flottante regroupe les commandes suivantes :
 1. Tout effacer : vide toute la grille, après confirmation.
 2. Effacer la sélection : vide les cases sélectionnées.
 3. Remplir toutes les notes : inscrit tous les candidats possibles dans chaque case vide.
-4. Annuler.
-5. Rétablir.
-6. Fermer.
+4. Recommencer la grille (section 7.7).
+5. Annuler.
+6. Rétablir.
+7. Fermer.
 
 ### 7.5 Pause et fin de partie
 
 - La pause masque la grille et arrête le chronomètre. Le chronomètre s'arrête aussi quand l'application passe en arrière-plan.
-- En fin de partie, un écran récapitule le temps, le nombre d'indices et le nombre de vérifications. Il propose les boutons de ressenti (section 5.4), puis « Rejouer », « Grille suivante » et « Bibliothèque ».
+- En fin de partie, un écran récapitule le temps, le nombre d'indices, de vérifications et d'erreurs. Il propose les boutons de ressenti (section 5.4), puis « Rejouer », « Grille suivante » et « Bibliothèque ».
+
+### 7.6 Vérification immédiate et limite de 3 erreurs (évolution E1)
+
+Le joueur veut savoir tout de suite qu'un chiffre est faux, pour repérer où son raisonnement a déraillé, et s'obliger à réfléchir avant de poser un chiffre.
+
+1. Dès qu'un chiffre définitif est posé, il est comparé à la solution.
+2. S'il est faux, il s'affiche en rouge et le compteur d'erreurs augmente de 1.
+3. Le compteur s'affiche dans la barre supérieure, à côté du chronomètre : « Erreurs : 1 / 3 ».
+4. Un chiffre faux reste affiché en rouge jusqu'à ce qu'il soit effacé ou remplacé. L'effacer ne retire pas l'erreur du compteur.
+5. Les notes ne sont jamais vérifiées et ne comptent pas comme des erreurs.
+6. Annuler ne retire pas une erreur du compteur.
+7. À la 3e erreur, la partie s'arrête :
+   - la grille est bloquée (plus aucune saisie possible) ;
+   - un écran « Partie perdue » affiche le temps écoulé et propose « Recommencer la grille » ou « Retour à l'accueil » ;
+   - la partie est enregistrée dans l'historique comme « perdue ».
+8. Réglage « Mode erreurs » (vérification immédiate + limite de 3 erreurs), activé par défaut. Il peut être désactivé dans les Réglages, mais seulement entre deux parties : il est fixé au début de chaque partie et ne change pas en cours de partie, pour ne pas fausser les statistiques.
+9. Statistiques : nombre de parties perdues par niveau, et nombre moyen d'erreurs par partie terminée (section 10).
+
+### 7.7 Recommencer une grille à zéro (évolution E2)
+
+1. La commande « Recommencer la grille » est accessible :
+   - dans le menu de la barre supérieure ;
+   - dans le menu Options (icône crayon) ;
+   - sur l'écran « Partie perdue » ;
+   - dans la bibliothèque, sur chaque grille.
+2. Une confirmation est demandée, sauf depuis l'écran « Partie perdue ».
+3. Effet : la grille est vidée (chiffres, notes, combinaisons barrées, cages virtuelles, historique d'annulation), le chronomètre repart à 00:00:00 et le compteur d'erreurs à 0.
+4. La tentative précédente reste dans l'historique de la grille, marquée « abandonnée » (ou « perdue » si elle s'est arrêtée à 3 erreurs).
 
 ## 8. Bibliothèque et autres écrans
 
@@ -234,7 +294,7 @@ Aucune grille ne disparaît jamais de la bibliothèque : toute grille peut être
 
 ### 8.2 Bibliothèque
 
-- Les grilles sont regroupées par niveau. Chacune est affichée avec une miniature, son numéro et son statut : jamais jouée, en cours (avec le temps écoulé), terminée (avec le meilleur temps), favorite.
+- Les grilles sont regroupées par niveau. Chacune est affichée avec une miniature, son numéro et son statut : jamais jouée, en cours (avec le temps écoulé), terminée (avec le meilleur temps), perdue (dernière tentative arrêtée à 3 erreurs), favorite.
 - Filtres : niveau, statut, favoris.
 - Tris : numéro, meilleur temps, date de dernière partie, score de difficulté.
 - Actions sur une grille : Jouer ou Reprendre, Recommencer à zéro, Ajouter aux favoris ou les retirer, consulter l'historique des parties de la grille.
@@ -243,6 +303,7 @@ Aucune grille ne disparaît jamais de la bibliothèque : toute grille peut être
 ### 8.3 Réglages
 
 - Les aides et leurs valeurs par défaut (section 9).
+- Le mode erreurs (section 7.6), activé par défaut ; un changement ne s'applique qu'aux parties suivantes.
 - L'affichage des notes : en ligne ou en grille 3 × 3.
 - Le thème : clair, sombre ou automatique.
 - La couleur du liseré des cages et du surlignage.
@@ -262,7 +323,8 @@ Toutes les aides peuvent être activées ou désactivées dans les Réglages, et
 | Nettoyage automatique des notes | Activée | Retire une note devenue impossible après la saisie d'un chiffre dans la même ligne, colonne, bloc ou cage |
 | Filtrage des combinaisons | Activée | Grisé des combinaisons incompatibles avec les chiffres déjà posés |
 | Notes automatiques | Activée | Commande « Remplir toutes les notes » du menu Options (section 7.4) ; la masquer si l'aide est désactivée |
-| Vérification | À la demande | Bouton qui marque les chiffres faux par rapport à la solution |
+| Calcul de la règle des 45 en mode Somme | Activée | Dans le bandeau du mode Somme (section 7.4), différence avec 45 × (nombre d'unités couvertes) |
+| Vérification | À la demande | Bouton qui marque les chiffres faux par rapport à la solution ; sans objet quand le mode erreurs est actif (les chiffres faux sont déjà signalés), le bouton est alors masqué |
 | Indice | À la demande | Voir ci-dessous |
 
 **Indice progressif**
@@ -282,8 +344,9 @@ Les indices et les vérifications utilisés sont comptés dans l'historique. Une
 Tout est enregistré automatiquement, à chaque action, dans IndexedDB. On retrouve donc une partie exactement dans l'état où on l'a laissée.
 
 - **État sauvegardé pour chaque partie** : chiffres, notes et leur ordre de saisie, combinaisons barrées, cages virtuelles, historique d'annulation, temps écoulé.
-- **Historique par grille** : une ligne par partie, avec la date de début, la date de fin, la durée, le nombre d'indices et de vérifications, et le ressenti.
-- **Statistiques par niveau** : grilles terminées, temps moyen et médian, meilleur temps, pourcentage de parties sans indice, série en cours de parties sans indice.
+- **État sauvegardé (complément E1)** : compteur d'erreurs, mode erreurs de la partie, partie perdue ou non.
+- **Historique par grille** : une ligne par partie, avec la date de début, la date de fin, la durée, le résultat (terminée, abandonnée, perdue), le nombre d'indices, de vérifications et d'erreurs, et le ressenti.
+- **Statistiques par niveau** : grilles terminées, temps moyen et médian, meilleur temps, pourcentage de parties sans indice, série en cours de parties sans indice, nombre de parties perdues, nombre moyen d'erreurs par partie terminée.
 - **Évolution** : un graphique du temps moyen par niveau, mois par mois.
 - **Export et import** : un fichier JSON complet, qui contient la progression, l'historique et les réglages. La banque de grilles n'y figure pas, puisqu'elle est fournie avec l'application.
 - **Compatibilité** : le schéma de données est versionné, avec une migration automatique lors des mises à jour de l'application.
@@ -392,6 +455,15 @@ Claude Code développe l'application en neuf étapes, dans l'ordre. Une étape n
 | 8. Calibrage | Script de calibrage ; 10 grilles jouées par niveau ; ajustement des seuils ; régénération si besoin | Temps réels dans les fourchettes de la section 5.2, à ± 20 % près |
 | 9. Mode Enquête (V2) | Section 11 | Grilles générées à solution unique ; une enquête complète jouable |
 
+**Évolutions du 12 novembre 2026** (fiche `docs/evolutions-2026-11-12.md`), à réaliser avant le calibrage (étape 8), dans cet ordre. Chaque évolution a ses tests, sa mise à jour du cahier des charges, un commit séparé et une vérification de confidentialité avant l'envoi sur GitHub.
+
+| Évolution | Contenu | Critère de recette |
+| --- | --- | --- |
+| E2 + E1 | Recommencer une grille (7.7) ; vérification immédiate et limite de 3 erreurs (7.6) | Un chiffre faux s'affiche en rouge et compte une erreur ; à la 3e, la grille se bloque et l'écran « Partie perdue » permet de recommencer ; l'historique distingue terminée, abandonnée et perdue |
+| E3 | « Combinaisons » (ancienne calculatrice) et vraie calculatrice (7.4) | Une opération enchaînée (par exemple 45 − 17 − 9 =) donne le bon résultat ; le résultat reste affiché à la réouverture |
+| E4 | Somme de cages, bouton « + » (7.4) | Après confirmation du fonctionnement : le total et la différence avec la règle des 45 sont justes sur 5 sélections de test |
+| E5 | Refonte des cages virtuelles (7.4) | Après confirmation : somme proposée juste sur les trois cas de création ; conflits signalés ; combinaisons utilisables quand les cases se voient |
+
 **Consignes pour Claude Code**
 
 - Lire tout le document avant de commencer, puis proposer un découpage détaillé de l'étape en cours avant de coder.
@@ -403,7 +475,8 @@ Claude Code développe l'application en neuf étapes, dans l'ordre. Une étape n
 
 - [x] Rôle des icônes « bloc-notes » et « crayon » : précisé et intégré en section 7.
 - [ ] Valider ou ajuster les pondérations et les seuils de la section 5 après le calibrage (étape 8).
-- [ ] Fixer la taille de la banque ULTIME d'après le temps de génération mesuré à l'étape 3.
+- [x] Fixer la taille de la banque ULTIME d'après le temps de génération mesuré à l'étape 3 : 30 grilles, produites en environ 6 minutes.
+- [ ] Confirmer le fonctionnement du mode Somme (E4) et la refonte des cages virtuelles (E5) avant leur développement.
 - [ ] Choisir le nom de l'application et son icône.
 - [ ] Créer un compte GitHub (gratuit), nécessaire à l'hébergement sur GitHub Pages, si tu n'en as pas déjà un.
 - [ ] Décider si la génération de grilles directement sur l'iPad (option V1.1) est utile, une fois la banque en place.
