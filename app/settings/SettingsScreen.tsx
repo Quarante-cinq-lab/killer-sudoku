@@ -95,6 +95,19 @@ export function SettingsScreen(props: Props) {
       <div className="library-scroll settings">
         {message && <p className="notice">{message}</p>}
 
+        <Section title={S.errorModeTitle}>
+          <label className="aid-row">
+            <span>{S.errorModeLabel}</span>
+            <input
+              type="checkbox"
+              role="switch"
+              checked={settings.errorMode}
+              onChange={(e) => set('errorMode', e.target.checked)}
+            />
+          </label>
+          <p className="panel-help">{S.errorModeHelp}</p>
+        </Section>
+
         <Section title={S.aidsTitle}>
           <AidsContent
             aids={settings.defaultAids}

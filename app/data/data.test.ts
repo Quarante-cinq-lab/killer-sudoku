@@ -5,7 +5,7 @@ import { makeRecord, serializeBank } from '../../engine/bank';
 import { parseSolution } from '../../engine/model';
 import fixtures from '../../engine/__tests__/fixtures/killer-fixtures.json';
 import { readExtraBank } from '../bank';
-import { newGame } from '../game/state';
+import { GAME_FORMAT, newGame } from '../game/state';
 import type { SavedGame } from '../storage';
 import { backupFileName, buildBackup, parseBackup, type BackupData } from './backup';
 import { filterAndSort, levelStats, libraryItems, monthlyAverages, type HistoryEntry } from './history';
@@ -132,7 +132,7 @@ describe('export et import de la sauvegarde', () => {
   it('convertit les parties d’une ancienne sauvegarde', () => {
     const old = { ...game(records[0].id), version: undefined, undo: [[]] } as unknown as SavedGame;
     const parsed = parseBackup({ ...buildBackup({ ...data, games: [old] }, '0.7.0', 'x') });
-    expect(parsed.games[0].version).toBe(2);
+    expect(parsed.games[0].version).toBe(GAME_FORMAT);
     expect(parsed.games[0].undo[0]).toEqual({ cells: [] });
   });
 });

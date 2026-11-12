@@ -188,6 +188,18 @@ Pour voir le raisonnement d'une grille de la banque : `npm run trace -- data/ban
   « Enregistrer dans Fichiers ». L'import vérifie le fichier et demande confirmation avant de remplacer.
   Les grilles importées en complément figurent dans l'export, pour que leur historique reste utilisable.
 
+## Erreurs et « Recommencer » (évolutions E1 et E2)
+
+- **Mode erreurs** (réglage, activé par défaut) : chaque chiffre posé est comparé à la solution. Un chiffre
+  faux s'affiche en rouge et compte une erreur (« Erreurs : 1 / 3 » dans la barre). Effacer ou annuler ne
+  retire pas l'erreur ; les notes ne sont jamais vérifiées. À la 3e erreur, la grille se bloque et l'écran
+  « Partie perdue » propose de recommencer. Le réglage s'applique aux nouvelles parties seulement.
+- Les conflits (doublon, somme impossible) sont signalés en orangé, pour ne pas les confondre avec un chiffre
+  faux.
+- **Recommencer la grille** : menu « ⋯ », menu Options, écran « Partie perdue » et bibliothèque. Tout repart
+  de zéro ; la tentative précédente reste dans l'historique (abandonnée ou perdue).
+- Statistiques : parties perdues et erreurs moyennes par grille terminée.
+
 ## Installer l'application sur l'iPad
 
 L'application est publiée sur GitHub Pages : **https://quarante-cinq-lab.github.io/killer-sudoku/**

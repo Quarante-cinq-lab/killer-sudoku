@@ -199,6 +199,8 @@ export function StatsScreen({
               [S.best, timeOrDash(st.bestMs)],
               [S.withoutHint, st.withoutHintPercent === null ? S.none : S.percent(st.withoutHintPercent)],
               [S.streak, String(st.streakWithoutHint)],
+              [S.lost, String(st.lost)],
+              [S.averageErrors, st.averageErrors === null ? S.none : S.decimal(st.averageErrors)],
             ];
             return (
               <section key={level} className="stats-card">

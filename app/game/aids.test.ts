@@ -13,6 +13,7 @@ import {
 } from './aids';
 import {
   addVirtualCage,
+  GAME_FORMAT,
   DEFAULT_AIDS,
   migrateGame,
   newGame,
@@ -167,7 +168,7 @@ describe('aides de la partie', () => {
       level: 'HARD',
     };
     const game = migrateGame(old);
-    expect(game.version).toBe(2);
+    expect(game.version).toBe(GAME_FORMAT);
     expect(game.level).toBe('HARD');
     expect(game.undo[0].cells[0].after.value).toBe(3);
     expect(game.aids).toEqual(DEFAULT_AIDS);

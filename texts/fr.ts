@@ -28,7 +28,13 @@ export const TEXTS = {
     paused: 'Partie en pause',
     menu: 'Menu',
     restart: 'Recommencer la grille',
-    restartConfirm: 'Recommencer cette grille à zéro ? Le chronomètre repart aussi de zéro.',
+    restartConfirm:
+      'Recommencer cette grille à zéro ? Chiffres, notes, cages virtuelles, chronomètre et erreurs repartent de zéro.',
+    errors: (n: number, max: number) => `Erreurs : ${n} / ${max}`,
+    lostTitle: 'Partie perdue',
+    lostText: (max: number) => `${max} erreurs : la grille est bloquée.`,
+    lostTime: (time: string) => `Temps écoulé : ${time}`,
+    backHome: 'Retour à l’accueil',
     undo: 'Annuler',
     redo: 'Rétablir',
     hint: 'Indice',
@@ -86,8 +92,12 @@ export const TEXTS = {
     virtualItem: (sum: number, n: number) => `${sum} en ${n} case${n > 1 ? 's' : ''}`,
     show: 'Montrer',
     remove: 'Supprimer',
-    victoryStats: (hints: number, checks: number) =>
-      `${hints} indice${hints > 1 ? 's' : ''} · ${checks} vérification${checks > 1 ? 's' : ''}`,
+    victoryStats: (hints: number, checks: number, errors: number | null) =>
+      [
+        `${hints} indice${hints > 1 ? 's' : ''}`,
+        `${checks} vérification${checks > 1 ? 's' : ''}`,
+        ...(errors === null ? [] : [`${errors} erreur${errors > 1 ? 's' : ''}`]),
+      ].join(' · '),
     victoryTitle: 'Bravo !',
     victoryTime: (time: string) => `Grille terminée en ${time}`,
     replay: 'Rejouer',
@@ -152,7 +162,7 @@ export const TEXTS = {
     favoritesOnly: 'Favoris',
     statusLabel: 'Statut',
     sortLabel: 'Tri',
-    status: { jamais: 'Jamais jouée', en_cours: 'En cours', terminee: 'Terminée' },
+    status: { jamais: 'Jamais jouée', en_cours: 'En cours', terminee: 'Terminée', perdue: 'Perdue' },
     sorts: {
       numero: 'Numéro',
       meilleur_temps: 'Meilleur temps',
@@ -172,8 +182,9 @@ export const TEXTS = {
     noHistory: 'Aucune partie terminée pour l’instant.',
     historyLine: (date: string, time: string, outcome: string, extra: string) =>
       `${date} · ${time} · ${outcome}${extra ? ' · ' + extra : ''}`,
-    outcomes: { terminee: 'terminée', abandonnee: 'abandonnée' },
+    outcomes: { terminee: 'terminée', abandonnee: 'abandonnée', perdue: 'perdue' },
     hintsUsed: (n: number) => (n === 0 ? 'sans indice' : n === 1 ? '1 indice' : `${n} indices`),
+    errorsMade: (n: number) => (n === 0 ? 'sans erreur' : n === 1 ? '1 erreur' : `${n} erreurs`),
     score: (n: number) => `Score ${n}`,
   },
 
@@ -186,6 +197,9 @@ export const TEXTS = {
     best: 'Meilleur temps',
     withoutHint: 'Sans indice',
     streak: 'Série sans indice',
+    lost: 'Parties perdues',
+    averageErrors: 'Erreurs par grille terminée',
+    decimal: (n: number) => n.toLocaleString('fr-FR', { maximumFractionDigits: 1 }),
     percent: (n: number) => `${n} %`,
     none: '—',
     chartTitle: 'Temps moyen par mois',
@@ -202,6 +216,10 @@ export const TEXTS = {
     title: 'Réglages',
     back: 'Accueil',
     aidsTitle: 'Aides par défaut des nouvelles parties',
+    errorModeTitle: 'Mode erreurs',
+    errorModeLabel: 'Vérification immédiate et limite de 3 erreurs',
+    errorModeHelp:
+      'Chaque chiffre posé est comparé à la solution : un chiffre faux s’affiche en rouge et compte une erreur ; à la 3e, la partie est perdue. Ce réglage s’applique aux nouvelles parties seulement.',
     displayTitle: 'Affichage',
     notes: 'Notes',
     notesInline: 'En ligne',

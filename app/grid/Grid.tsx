@@ -289,7 +289,9 @@ export function Grid({
               y={(rowOf(cell) + 0.5) * CELL + DIGIT_FONT * 0.36}
               fontSize={DIGIT_FONT}
               textAnchor="middle"
-              className={marks.wrong.has(cell) || marks.conflicts.has(cell) ? 'digit error' : 'digit'}
+              className={
+                marks.wrong.has(cell) ? 'digit error' : marks.conflicts.has(cell) ? 'digit conflict' : 'digit'
+              }
             >
               {value}
             </text>

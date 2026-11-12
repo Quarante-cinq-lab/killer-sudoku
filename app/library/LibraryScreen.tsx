@@ -215,16 +215,22 @@ export function LibraryScreen({ items, history, onBack, onPlay, onRestart, onTog
               </>
             ) : (
               <div className="menu-list">
-                <button
-                  type="button"
-                  className="primary"
-                  onClick={() => {
-                    onPlay(item);
-                    close();
-                  }}
-                >
-                  {item.status === 'en_cours' ? L.resume : L.play}
-                </button>
+                {item.status === 'perdue' ? (
+                  <button type="button" className="primary" onClick={() => setConfirmRestart(true)}>
+                    {L.restart}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="primary"
+                    onClick={() => {
+                      onPlay(item);
+                      close();
+                    }}
+                  >
+                    {item.status === 'en_cours' ? L.resume : L.play}
+                  </button>
+                )}
                 {item.status === 'en_cours' && (
                   <button type="button" onClick={() => setConfirmRestart(true)}>
                     {L.restart}
@@ -259,7 +265,11 @@ function HistoryList({ entries }: { entries: readonly HistoryEntry[] }) {
             new Date(h.endedAt).toLocaleDateString('fr-FR'),
             formatTime(h.durationMs),
             L.outcomes[h.outcome],
-            [h.outcome === 'terminee' ? L.hintsUsed(h.hints) : '', h.feeling ? G.feelings[h.feeling] : '']
+            [
+              h.outcome === 'terminee' ? L.hintsUsed(h.hints) : '',
+              h.errors === undefined ? '' : L.errorsMade(h.errors),
+              h.feeling ? G.feelings[h.feeling] : '',
+            ]
               .filter(Boolean)
               .join(' · '),
           )}

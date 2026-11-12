@@ -25,6 +25,8 @@ export type HighlightColor = keyof typeof HIGHLIGHT_COLORS;
 export interface Settings {
   /** Aides activées au début de chaque nouvelle partie (section 9). */
   defaultAids: Aids;
+  /** Mode erreurs des nouvelles parties (section 7.6) ; une partie en cours garde le sien. */
+  errorMode: boolean;
   notesLayout: NotesLayout;
   theme: Theme;
   cageColor: CageColor;
@@ -33,6 +35,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   defaultAids: { ...DEFAULT_AIDS },
+  errorMode: true,
   notesLayout: 'inline',
   theme: 'auto',
   cageColor: 'mauve',
@@ -54,6 +57,7 @@ export function parseSettings(raw: unknown): Settings {
   ) as unknown as Aids;
   return {
     defaultAids,
+    errorMode: typeof o.errorMode === 'boolean' ? o.errorMode : DEFAULT_SETTINGS.errorMode,
     notesLayout: oneOf(o.notesLayout, ['inline', 'grid'], DEFAULT_SETTINGS.notesLayout),
     theme: oneOf(o.theme, ['auto', 'light', 'dark'], DEFAULT_SETTINGS.theme),
     cageColor: oneOf(o.cageColor, Object.keys(CAGE_COLORS) as CageColor[], DEFAULT_SETTINGS.cageColor),

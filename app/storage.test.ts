@@ -7,7 +7,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { openDB } from 'idb';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from './data/settings';
-import { newGame } from './game/state';
+import { GAME_FORMAT, newGame } from './game/state';
 import {
   addHistory,
   closeDb,
@@ -68,7 +68,7 @@ describe('base de données', () => {
     old.close();
     const games = await loadGames();
     expect(games).toHaveLength(1);
-    expect(games[0].version).toBe(2);
+    expect(games[0].version).toBe(GAME_FORMAT);
     expect(await loadCurrentId()).toBe('HRD-0002');
     expect(await loadHistory()).toEqual([]);
   });

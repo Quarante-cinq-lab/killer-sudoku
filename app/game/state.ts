@@ -12,7 +12,10 @@ import { combinationsFor } from '../../engine/combinations';
 import { cageIndexByCell, CELL_COUNT, PEERS, type Puzzle } from '../../engine/model';
 
 /** Version du format de sauvegarde d'une partie (les anciennes sont converties par migrateGame). */
-export const GAME_FORMAT = 2;
+export const GAME_FORMAT = 3;
+
+/** Nombre d'erreurs qui arrête la partie quand le mode erreurs est actif (section 7.6). */
+export const MAX_ERRORS = 3;
 
 /** Contenu d'une case : un chiffre définitif (0 = vide) et des notes, dans leur ordre de saisie. */
 export interface CellContent {
@@ -93,13 +96,22 @@ export interface GameState extends Extras {
   /** Temps de jeu cumulé, en millisecondes (le chronomètre en cours est géré à part). */
   elapsedMs: number;
   completed: boolean;
+  /**
+   * Mode erreurs (section 7.6), fixé au début de la partie : chaque chiffre posé est comparé à la solution,
+   * un chiffre faux compte une erreur, et la partie est perdue à la 3e.
+   */
+  errorMode: boolean;
+  /** Erreurs commises (un effacement ou « Annuler » ne les retire pas). */
+  errors: number;
+  /** Partie arrêtée à 3 erreurs. */
+  lost: boolean;
   /** Nombre d'indices et de vérifications utilisés (section 9). */
   hints: number;
   checks: number;
   aids: Aids;
 }
 
-export function newGame(puzzleId: string, aids: Aids = DEFAULT_AIDS): GameState {
+export function newGame(puzzleId: string, aids: Aids = DEFAULT_AIDS, errorMode = true): GameState {
   return {
     version: GAME_FORMAT,
     puzzleId,
@@ -111,6 +123,9 @@ export function newGame(puzzleId: string, aids: Aids = DEFAULT_AIDS): GameState 
     redo: [],
     elapsedMs: 0,
     completed: false,
+    errorMode,
+    errors: 0,
+    lost: false,
     hints: 0,
     checks: 0,
     aids: { ...aids },
@@ -119,7 +134,9 @@ export function newGame(puzzleId: string, aids: Aids = DEFAULT_AIDS): GameState 
 
 /**
  * Convertit une partie sauvegardée par une version précédente de l'application (format 1 : historique
- * limité aux cases, pas d'aides ni de compteurs). Les champs inconnus sont conservés.
+ * limité aux cases, pas d'aides ni de compteurs ; format 2 : pas de mode erreurs). Les champs inconnus
+ * sont conservés. Une partie commencée avant le mode erreurs le garde désactivé, pour ne pas changer ses
+ * règles en cours de route.
  */
 export function migrateGame<T extends object>(saved: T): T & GameState {
   const raw = saved as Partial<GameState> & { undo?: unknown[]; redo?: unknown[] };
@@ -136,7 +153,15 @@ export function migrateGame<T extends object>(saved: T): T & GameState {
     hints: raw.hints ?? 0,
     checks: raw.checks ?? 0,
     aids: { ...DEFAULT_AIDS, ...raw.aids },
+    errorMode: raw.errorMode ?? false,
+    errors: raw.errors ?? 0,
+    lost: raw.lost ?? false,
   } as T & GameState;
+}
+
+/** Vrai si la partie est finie : gagnée, ou perdue à 3 erreurs. Plus aucune saisie n'est possible. */
+export function isOver(state: GameState): boolean {
+  return state.completed || state.lost;
 }
 
 const contentOf = (state: GameState, cell: number): CellContent => ({
@@ -192,8 +217,9 @@ export function setDigit(
   puzzle: Puzzle,
   cells: readonly number[],
   digit: number,
+  solution?: readonly number[],
 ): GameState {
-  if (state.completed || cells.length === 0) return state;
+  if (isOver(state) || cells.length === 0) return state;
   const erase = cells.every((c) => state.values[c] === digit);
   const contents = new Map<number, CellContent>();
   for (const cell of cells) contents.set(cell, { value: erase ? 0 : digit, notes: [] });
@@ -205,7 +231,35 @@ export function setDigit(
       }
     }
   }
-  return commit(state, contents);
+  const next = commit(state, contents);
+  return erase ? next : countErrors(next, state, cells, digit, solution);
+}
+
+/**
+ * Mode erreurs (section 7.6) : chaque case qui reçoit un chiffre faux compte une erreur (rétablir un chiffre
+ * déjà compté ne compte pas à nouveau, car « Rétablir » ne passe pas par ici). À la 3e, la partie est perdue.
+ */
+function countErrors(
+  next: GameState,
+  before: GameState,
+  cells: readonly number[],
+  digit: number,
+  solution?: readonly number[],
+): GameState {
+  if (!next.errorMode || !solution || next === before) return next;
+  const wrong = cells.filter((c) => before.values[c] !== digit && solution[c] !== digit).length;
+  if (wrong === 0) return next;
+  const errors = Math.min(MAX_ERRORS, next.errors + wrong);
+  return { ...next, errors, lost: errors >= MAX_ERRORS };
+}
+
+/** Chiffres faux visibles (mode erreurs) : ils restent en rouge jusqu'à ce qu'on les efface ou remplace. */
+export function wrongDigits(
+  state: Pick<GameState, 'errorMode' | 'values'>,
+  solution: readonly number[],
+): Set<number> {
+  if (!state.errorMode) return new Set();
+  return new Set(state.values.flatMap((v, c) => (v && v !== solution[c] ? [c] : [])));
 }
 
 /**
@@ -213,7 +267,7 @@ export function setDigit(
  * sinon elle est ajoutée (à la fin) là où elle manque.
  */
 export function toggleNote(state: GameState, cells: readonly number[], digit: number): GameState {
-  if (state.completed) return state;
+  if (isOver(state)) return state;
   const empty = cells.filter((c) => state.values[c] === 0);
   const all = empty.length > 0 && empty.every((c) => state.notes[c].includes(digit));
   const contents = new Map<number, CellContent>();
@@ -236,7 +290,7 @@ export function writeCells(
   puzzle: Puzzle,
   contents: ReadonlyMap<number, CellContent>,
 ): GameState {
-  if (state.completed) return state;
+  if (isOver(state)) return state;
   const all = new Map(contents);
   if (state.aids.autoCleanNotes) {
     for (const [cell, { value }] of contents) {
@@ -252,7 +306,7 @@ export function writeCells(
 
 /** Vide les cases sélectionnées (chiffres et notes). */
 export function eraseCells(state: GameState, cells: readonly number[]): GameState {
-  if (state.completed) return state;
+  if (isOver(state)) return state;
   return commit(state, new Map(cells.map((c) => [c, { value: 0, notes: [] }])));
 }
 
@@ -289,7 +343,7 @@ export function candidates(puzzle: Puzzle, values: readonly number[], cell: numb
 
 /** « Remplir toutes les notes » : chaque case vide reçoit tous ses candidats, dans l'ordre croissant. */
 export function fillAllNotes(state: GameState, puzzle: Puzzle): GameState {
-  if (state.completed) return state;
+  if (isOver(state)) return state;
   const contents = new Map<number, CellContent>();
   state.values.forEach((v, cell) => {
     if (v === 0) contents.set(cell, { value: 0, notes: candidates(puzzle, state.values, cell) });
@@ -304,7 +358,7 @@ function withoutKey(struck: Record<string, number[]>, key: string): Record<strin
 
 /** Barre ou rétablit une combinaison (masque de chiffres) dans la fenêtre des combinaisons d'une cage. */
 export function toggleCombination(state: GameState, key: string, combo: number): GameState {
-  if (state.completed) return state;
+  if (isOver(state)) return state;
   const current = state.struck[key] ?? [];
   const next = current.includes(combo) ? current.filter((m) => m !== combo) : [...current, combo];
   const struck = withoutKey(state.struck, key);
@@ -314,7 +368,7 @@ export function toggleCombination(state: GameState, key: string, combo: number):
 
 /** Ajoute une cage virtuelle (au moins une case, somme de 1 à 405). */
 export function addVirtualCage(state: GameState, cells: readonly number[], sum: number): GameState {
-  if (state.completed || cells.length === 0 || sum < 1 || sum > 405) return state;
+  if (isOver(state) || cells.length === 0 || sum < 1 || sum > 405) return state;
   const id = state.virtualCages.reduce((max, v) => Math.max(max, v.id), 0) + 1;
   const cage: VirtualCage = { id, sum, cells: [...new Set(cells)].sort((a, b) => a - b) };
   return commit(state, new Map(), { struck: state.struck, virtualCages: [...state.virtualCages, cage] });
@@ -322,17 +376,17 @@ export function addVirtualCage(state: GameState, cells: readonly number[], sum: 
 
 /** Supprime une cage virtuelle (et les combinaisons barrées qui lui étaient associées). */
 export function removeVirtualCage(state: GameState, id: number): GameState {
-  if (state.completed) return state;
+  if (isOver(state)) return state;
   const struck = withoutKey(state.struck, `v${id}`);
   return commit(state, new Map(), { struck, virtualCages: state.virtualCages.filter((v) => v.id !== id) });
 }
 
 export function canUndo(state: GameState): boolean {
-  return state.undo.length > 0 && !state.completed;
+  return state.undo.length > 0 && !isOver(state);
 }
 
 export function canRedo(state: GameState): boolean {
-  return state.redo.length > 0 && !state.completed;
+  return state.redo.length > 0 && !isOver(state);
 }
 
 export function undo(state: GameState): GameState {
@@ -371,5 +425,5 @@ export function isSolved(state: GameState, solution: readonly number[]): boolean
 
 /** Marque la partie comme gagnée si la grille est juste. */
 export function checkVictory(state: GameState, solution: readonly number[]): GameState {
-  return !state.completed && isSolved(state, solution) ? { ...state, completed: true } : state;
+  return !isOver(state) && isSolved(state, solution) ? { ...state, completed: true } : state;
 }

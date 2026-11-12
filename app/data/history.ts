@@ -7,7 +7,7 @@ import type { Level, PuzzleRecord } from '../../engine/model';
 /** Ressenti donné en fin de partie (section 5.4). */
 export type Feeling = 'trop_facile' | 'bon_niveau' | 'trop_dur';
 
-/** Une ligne d'historique : une partie terminée, ou abandonnée (recommencée avant la fin). */
+/** Une ligne d'historique : une partie terminée, abandonnée (recommencée avant la fin) ou perdue (3 erreurs). */
 export interface HistoryEntry {
   id?: number;
   puzzleId: string;
@@ -15,10 +15,12 @@ export interface HistoryEntry {
   /** Dates AAAA-MM-JJ. */
   startedAt: string;
   endedAt: string;
-  outcome: 'terminee' | 'abandonnee';
+  outcome: 'terminee' | 'abandonnee' | 'perdue';
   durationMs: number;
   hints: number;
   checks: number;
+  /** Erreurs commises (mode erreurs) ; absent dans les lignes enregistrées avant cette mesure. */
+  errors?: number;
   feeling: Feeling | null;
 }
 
@@ -26,11 +28,13 @@ export interface HistoryEntry {
 export interface GameSummary {
   puzzleId: string;
   completed: boolean;
+  /** Partie arrêtée à 3 erreurs (absent dans les anciennes sauvegardes). */
+  lost?: boolean;
   elapsedMs: number;
   updatedAt: number;
 }
 
-export type PuzzleStatus = 'jamais' | 'en_cours' | 'terminee';
+export type PuzzleStatus = 'jamais' | 'en_cours' | 'terminee' | 'perdue';
 
 export interface LibraryItem {
   record: PuzzleRecord;
@@ -61,10 +65,17 @@ export function libraryItems(
   return records.map((record) => {
     const game = gameOf.get(record.id);
     const finished = best.has(record.id);
-    const inProgress = game !== undefined && !game.completed;
+    const lost = game?.lost === true;
+    const inProgress = game !== undefined && !game.completed && !lost;
     return {
       record,
-      status: inProgress ? 'en_cours' : finished || game?.completed ? 'terminee' : 'jamais',
+      status: inProgress
+        ? 'en_cours'
+        : lost
+          ? 'perdue'
+          : finished || game?.completed
+            ? 'terminee'
+            : 'jamais',
       favorite: favorites.has(record.id),
       elapsedMs: inProgress ? game.elapsedMs : null,
       bestMs: best.get(record.id) ?? null,
@@ -110,6 +121,10 @@ export interface LevelStats {
   withoutHintPercent: number | null;
   /** Nombre de parties terminées sans indice d'affilée, en partant de la plus récente. */
   streakWithoutHint: number;
+  /** Parties perdues (3 erreurs). */
+  lost: number;
+  /** Nombre moyen d'erreurs par partie terminée. */
+  averageErrors: number | null;
 }
 
 const finishedOf = (history: readonly HistoryEntry[], level: Level): HistoryEntry[] =>
@@ -132,6 +147,8 @@ export function levelStats(history: readonly HistoryEntry[], level: Level): Leve
     bestMs: n ? times[0] : null,
     withoutHintPercent: n ? Math.round((100 * done.filter((h) => h.hints === 0).length) / n) : null,
     streakWithoutHint: streak,
+    lost: history.filter((h) => h.outcome === 'perdue' && h.level === level).length,
+    averageErrors: n ? done.reduce((s, h) => s + (h.errors ?? 0), 0) / n : null,
   };
 }
 

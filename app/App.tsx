@@ -56,8 +56,13 @@ const nextScreenKey = (): number => ++screenCounter;
 const pickRandom = <T,>(list: readonly T[]): T => list[Math.floor(Math.random() * list.length)];
 
 /** Nouvelle partie à zéro, avec les aides par défaut des réglages. */
-function freshGame(puzzleId: string, level: Level, aids: Settings['defaultAids']): SavedGame {
-  return { ...newGame(puzzleId, aids), level, startedAt: today(), updatedAt: Date.now() };
+function freshGame(puzzleId: string, level: Level, settings: Settings): SavedGame {
+  return {
+    ...newGame(puzzleId, settings.defaultAids, settings.errorMode),
+    level,
+    startedAt: today(),
+    updatedAt: Date.now(),
+  };
 }
 
 interface Data {
@@ -110,7 +115,7 @@ export function App() {
 
   /** Ouvre une nouvelle partie à zéro sur une grille et l'enregistre. */
   const startFresh = async (puzzleId: string, level: Level) => {
-    const game = freshGame(puzzleId, level, settings.defaultAids);
+    const game = freshGame(puzzleId, level, settings);
     await saveGame(game);
     open(game);
   };
@@ -131,14 +136,17 @@ export function App() {
 
   /** Bibliothèque : reprendre une partie en cours, sinon en commencer une (grille jamais jouée ou rejouée). */
   const play = (item: LibraryItem) => {
-    const game = data.games.find((g) => g.puzzleId === item.record.id && !g.completed);
+    const game = data.games.find((g) => g.puzzleId === item.record.id && !g.completed && !g.lost);
     if (game) open(game);
     else void startFresh(item.record.id, item.record.level);
   };
 
-  /** Bibliothèque : recommencer une partie en cours, qui reste dans l'historique comme abandonnée. */
+  /**
+   * Bibliothèque : recommencer une grille. Une partie en cours entamée reste dans l'historique comme
+   * abandonnée ; une partie perdue y est déjà.
+   */
   const restart = async (item: LibraryItem) => {
-    const game = data.games.find((g) => g.puzzleId === item.record.id && !g.completed);
+    const game = data.games.find((g) => g.puzzleId === item.record.id && !g.completed && !g.lost);
     if (game && (game.undo.length > 0 || game.elapsedMs > 60_000)) {
       await addHistory({
         puzzleId: game.puzzleId,
@@ -149,6 +157,7 @@ export function App() {
         durationMs: game.elapsedMs,
         hints: game.hints,
         checks: game.checks,
+        errors: game.errors,
         feeling: null,
       });
     }
@@ -235,6 +244,7 @@ export function App() {
           initial={screen.game}
           favorite={data.favorites.has(record.id)}
           notesLayout={settings.notesLayout}
+          errorMode={settings.errorMode}
           onToggleFavorite={() => toggleFavorite(record.id)}
           onHome={() => goTo('home')}
           onNext={() => void newGrid(record.level)}
@@ -259,7 +269,7 @@ export function App() {
   }
 
   const started = new Set([...data.games.map((g) => g.puzzleId), ...data.history.map((h) => h.puzzleId)]);
-  const current = data.games.find((g) => g.puzzleId === data.currentId && !g.completed);
+  const current = data.games.find((g) => g.puzzleId === data.currentId && !g.completed && !g.lost);
   const currentRecord = current && findPuzzle(current.puzzleId);
 
   return (

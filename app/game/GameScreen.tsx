@@ -46,6 +46,9 @@ import {
   eraseCells,
   fillAllNotes,
   isFull,
+  isOver,
+  MAX_ERRORS,
+  wrongDigits,
   newGame,
   PURIST_AIDS,
   redo,
@@ -69,6 +72,8 @@ interface Props {
   initial: SavedGame;
   favorite: boolean;
   notesLayout: NotesLayout;
+  /** Mode erreurs des nouvelles parties (réglage) : utilisé quand on recommence la grille. */
+  errorMode: boolean;
   onToggleFavorite: () => void;
   onHome: () => void;
   onNext: () => void;
@@ -88,6 +93,7 @@ function historyEntry(game: SavedGame, outcome: HistoryEntry['outcome'], duratio
     durationMs,
     hints: game.hints,
     checks: game.checks,
+    errors: game.errors,
     feeling: null,
   };
 }
@@ -208,7 +214,14 @@ export function GameScreen(props: Props) {
         void addHistory(entry).then((id) => setFinished({ ...entry, id }));
         setSelection([]);
         setFocus(null);
-      } else if (isFull(next) && !isFull(current)) setToast(T.fullButWrong);
+      } else if (next.lost && !current.lost) {
+        clock.current = stopClock(clock.current, now());
+        next.elapsedMs = clock.current.baseMs;
+        setElapsed(next.elapsedMs);
+        void addHistory(historyEntry(next, 'perdue', next.elapsedMs));
+        setSelection([]);
+        setFocus(null);
+      } else if (isFull(next) && !isFull(current) && !next.errorMode) setToast(T.fullButWrong);
       gameRef.current = next;
       setGame(next);
       persist(next);
@@ -217,7 +230,7 @@ export function GameScreen(props: Props) {
   );
 
   const pause = useCallback(() => {
-    if (gameRef.current.completed) return;
+    if (isOver(gameRef.current)) return;
     clock.current = stopClock(clock.current, now());
     setElapsed(clock.current.baseMs);
     setPaused(true);
@@ -232,12 +245,12 @@ export function GameScreen(props: Props) {
   const restart = () => {
     // Une partie entamée qu'on recommence avant la fin reste dans l'historique comme « abandonnée ».
     const spent = readClock(clock.current, now());
-    if (!game.completed && (game.undo.length > 0 || spent > 60_000)) {
+    if (!isOver(game) && (game.undo.length > 0 || spent > 60_000)) {
       void addHistory(historyEntry(game, 'abandonnee', spent));
     }
     const fresh: SavedGame = {
       ...game,
-      ...newGame(record.id, game.aids),
+      ...newGame(record.id, game.aids, props.errorMode),
       startedAt: today(),
     };
     setFinished(null);
@@ -287,7 +300,7 @@ export function GameScreen(props: Props) {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  const blocked = paused || game.completed;
+  const blocked = paused || isOver(game);
   const aids = game.aids;
   const digitTarget: DigitTarget =
     target === 'calculator' && calcOpen
@@ -305,7 +318,7 @@ export function GameScreen(props: Props) {
         const next = (v === '0' ? '' : v) + String(d);
         return Number(next) <= 405 ? next : v;
       });
-    } else update((s) => setDigit(s, record, selection, d));
+    } else update((s) => setDigit(s, record, selection, d, solution));
   };
   const onNote = (d: number) => !blocked && update((s) => toggleNote(s, selection, d));
 
@@ -388,9 +401,12 @@ export function GameScreen(props: Props) {
           ? new Set(game.values.flatMap((v, c) => (v === focusValue ? [c] : [])))
           : EMPTY,
       conflicts: aids.conflicts ? conflictCells(record, game.values) : EMPTY,
-      wrong: aids.check
-        ? new Set([...checked].filter(([c, v]) => game.values[c] === v).map(([c]) => c))
-        : EMPTY,
+      // Chiffres faux : vérification immédiate (mode erreurs), ou dernière vérification à la demande.
+      wrong: game.errorMode
+        ? wrongDigits({ errorMode: game.errorMode, values: game.values }, solution)
+        : aids.check
+          ? new Set([...checked].filter(([c, v]) => game.values[c] === v).map(([c]) => c))
+          : EMPTY,
       hint:
         !hint || hint.level < 2
           ? EMPTY
@@ -401,7 +417,7 @@ export function GameScreen(props: Props) {
               : EMPTY,
       virtualCages: game.virtualCages,
     };
-  }, [aids, checked, focus, game.values, game.virtualCages, hint, record]);
+  }, [aids, checked, focus, game.errorMode, game.values, game.virtualCages, hint, record, solution]);
 
   const ask = (message: string, onConfirm: () => void) => setConfirmation({ message, onConfirm });
   const title = T.title(TEXTS.levels[record.level], record.number);
@@ -434,6 +450,11 @@ export function GameScreen(props: Props) {
           >
             <Icon name={paused ? 'play' : 'pause'} />
           </button>
+          {game.errorMode && (
+            <span className={game.errors > 0 ? 'error-count has-errors' : 'error-count'}>
+              {T.errors(game.errors, MAX_ERRORS)}
+            </span>
+          )}
           <span className="timer">{formatTime(elapsed)}</span>
         </div>
       </header>
@@ -595,6 +616,15 @@ export function GameScreen(props: Props) {
             </button>
             <button
               type="button"
+              onClick={() => {
+                setOptionsOpen(false);
+                ask(T.restartConfirm, restart);
+              }}
+            >
+              {T.restart}
+            </button>
+            <button
+              type="button"
               disabled={selection.length === 0}
               onClick={() => {
                 update((s) => eraseCells(s, selection));
@@ -631,7 +661,7 @@ export function GameScreen(props: Props) {
         <Modal onClose={() => setMenuOpen(false)}>
           <h2>{T.menu}</h2>
           <div className="menu-list">
-            {aids.check && (
+            {aids.check && !game.errorMode && (
               <button type="button" disabled={game.completed} onClick={runCheck}>
                 {T.check}
               </button>
@@ -702,12 +732,29 @@ export function GameScreen(props: Props) {
         </Modal>
       )}
 
+      {game.lost && (
+        <Modal>
+          <h2>{T.lostTitle}</h2>
+          <p>{title}</p>
+          <p>{T.lostText(MAX_ERRORS)}</p>
+          <p className="victory-time">{T.lostTime(formatTime(game.elapsedMs))}</p>
+          <div className="modal-actions vertical">
+            <button type="button" className="primary" onClick={restart}>
+              {T.restart}
+            </button>
+            <button type="button" className="secondary" onClick={onHome}>
+              {T.backHome}
+            </button>
+          </div>
+        </Modal>
+      )}
+
       {game.completed && (
         <Modal>
           <h2>{T.victoryTitle}</h2>
           <p>{title}</p>
           <p className="victory-time">{T.victoryTime(formatTime(game.elapsedMs))}</p>
-          <p>{T.victoryStats(game.hints, game.checks)}</p>
+          <p>{T.victoryStats(game.hints, game.checks, game.errorMode ? game.errors : null)}</p>
           <p className="panel-help">{T.feelingQuestion}</p>
           <div className="feelings">
             {(Object.keys(T.feelings) as Feeling[]).map((f) => (

@@ -25,6 +25,8 @@
   --hint: #fff1b8;
   --error: #c62828;
   --error-fill: #fde2e2;
+  --conflict: #b45309;
+  --conflict-fill: #fdebd3;
   --virtual: #d9730d; /* cages virtuelles : pointillé orangé */
   --struck: #9a97a8;
   /* Couleurs des niveaux dans les statistiques (palette validée pour les daltonismes). */
@@ -63,6 +65,8 @@
     --hint: #4a4220;
     --error: #ff8a80;
     --error-fill: #4a2326;
+    --conflict: #f0a050;
+    --conflict-fill: #47331d;
     --virtual: #f0a050;
     --struck: #77748a;
     --series-1: #3987e5;
@@ -100,6 +104,8 @@
   --hint: #4a4220;
   --error: #ff8a80;
   --error-fill: #4a2326;
+  --conflict: #f0a050;
+  --conflict-fill: #47331d;
   --virtual: #f0a050;
   --struck: #77748a;
   --series-1: #3987e5;
@@ -379,13 +385,33 @@ button.secondary {
   fill: var(--hint);
 }
 
-.conflict-fill,
+/* Chiffre faux (mode erreurs ou vérification) : rouge. Conflit (doublon, somme impossible) : orangé. */
 .wrong-fill {
   fill: var(--error-fill);
 }
 
+.conflict-fill {
+  fill: var(--conflict-fill);
+}
+
 .digit.error {
   fill: var(--error);
+}
+
+.digit.conflict {
+  fill: var(--conflict);
+}
+
+.error-count {
+  font-size: 16px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  margin-right: 4px;
+}
+
+.error-count.has-errors {
+  color: var(--error);
+  font-weight: 600;
 }
 
 .virtual-cage-line {
