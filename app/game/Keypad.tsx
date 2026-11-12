@@ -22,10 +22,11 @@ interface Props {
   onHint: () => void;
   hintEnabled: boolean;
   onCombinations: () => void;
+  onFinder: () => void;
   onCalculator: () => void;
   onVirtualCages: () => void;
   /** Fenêtres ouvertes (boutons affichés enfoncés). */
-  open: { combinations: boolean; calculator: boolean; virtualCages: boolean };
+  open: { combinations: boolean; finder: boolean; calculator: boolean; virtualCages: boolean };
 }
 
 function Tool({
@@ -83,7 +84,7 @@ export function Keypad(props: Props) {
       </div>
       <div className="tools tools-right">
         <Tool
-          icon="calculator"
+          icon="cageList"
           label={T.combinations}
           onClick={props.onCombinations}
           enabled={!disabled}
@@ -91,6 +92,13 @@ export function Keypad(props: Props) {
         />
         <Tool
           icon="notepad"
+          label={T.finder}
+          onClick={props.onFinder}
+          enabled={!disabled}
+          pressed={open.finder}
+        />
+        <Tool
+          icon="calculator"
           label={T.calculator}
           onClick={props.onCalculator}
           enabled={!disabled}

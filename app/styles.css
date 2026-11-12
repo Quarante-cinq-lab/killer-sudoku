@@ -568,7 +568,7 @@ button.secondary {
 
   .keypad {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 64px minmax(0, 1fr) minmax(0, 0.7fr) 64px;
+    grid-template-rows: 64px minmax(0, 1fr) minmax(0, 0.7fr) 76px;
     grid-template-areas: 'left' 'digits' 'notes' 'right';
   }
 
@@ -1220,4 +1220,58 @@ button.secondary {
   margin: 0;
   padding-left: 18px;
   line-height: 1.6;
+}
+
+/* ---------- Calculatrice (E3) ---------- */
+
+.floating.compact {
+  width: 250px;
+}
+
+.calc-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  background: var(--bg);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+}
+
+.calc-operation {
+  font-size: 14px;
+  color: var(--muted);
+  min-height: 1.2em;
+  white-space: nowrap;
+}
+
+.calc-value {
+  font-size: 30px;
+  white-space: nowrap;
+}
+
+.calc-pad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.calc-pad button {
+  min-height: 46px;
+  font-size: 20px;
+}
+
+.calc-pad .calc-op {
+  background: var(--key-note);
+  color: var(--key-note-fg);
+}
+
+.calc-pad .calc-equals {
+  grid-row: span 2;
+}
+
+.calc-pad button:last-child {
+  grid-column: span 3;
 }

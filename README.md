@@ -155,11 +155,12 @@ Pour voir le raisonnement d'une grille de la banque : `npm run trace -- data/ban
 
 ## Outils, aides et indice (étape 5)
 
-- **Combinaisons** (icône calculatrice) : toutes les combinaisons de la cage sélectionnée et de ses cages
-  virtuelles. Un toucher barre ou rétablit une combinaison ; celles qui contredisent les chiffres posés sont
-  grisées.
-- **Calculatrice** (bloc-notes) : « Somme » et « Nombre de cases » se remplissent avec le grand pavé (qui
+- **Combinaisons de la cage** : toutes les combinaisons de la cage sélectionnée et de ses cages virtuelles.
+  Un toucher barre ou rétablit une combinaison ; celles qui contredisent les chiffres posés sont grisées.
+- **Combinaisons** (bloc-notes) : « Somme » et « Nombre de cases » se remplissent avec le grand pavé (qui
   change de teinte), « 0 » pour 10, 20…, « C » pour effacer ; chiffres obligatoires ou exclus en option.
+- **Calculatrice** : une vraie calculatrice (+, −, ×, ÷, =, C, ←), avec l'opération en cours et le résultat.
+  Le résultat reste affiché quand on ferme puis rouvre la fenêtre pendant la partie.
 - **Cages virtuelles** : sélectionner des cases, taper leur somme, créer. Pointillé orangé, supprimables.
 - Les fenêtres se déplacent en faisant glisser leur barre de titre.
 - **Aides** (menu « ⋯ » → Aides de la partie) : surlignages, conflits, nettoyage automatique des notes,

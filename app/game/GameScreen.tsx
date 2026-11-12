@@ -17,24 +17,26 @@ import type { NotesLayout } from '../data/settings';
 import { addHistory, saveGame, updateHistory, type SavedGame } from '../storage';
 import {
   allDistinct,
-  calculatorLines,
+  finderLines,
   combinationLines,
   comboSources,
   conflictCells,
   unitCells,
   wrongCells,
 } from './aids';
+import { emptyCalc, type CalcState } from './calculator';
 import { formatTime, now, readClock, startClock, stopClock, stoppedClock, type Clock } from './clock';
 import { Keypad } from './Keypad';
 import {
   AidsContent,
   CalculatorContent,
+  FinderContent,
   CombinationsContent,
-  emptyCalculator,
+  emptyFinder,
   FloatingPanel,
-  typeInCalculator,
+  typeInFinder,
   VirtualCagesContent,
-  type CalculatorState,
+  type FinderState,
 } from './panels';
 import {
   addVirtualCage,
@@ -104,7 +106,7 @@ interface Confirmation {
 }
 
 /** Où va le pavé chiffres : dans la grille, ou dans le champ d'une fenêtre ouverte. */
-type DigitTarget = 'grid' | 'calculator' | 'virtual';
+type DigitTarget = 'grid' | 'finder' | 'virtual';
 
 /** Contenu de l'indice selon son niveau de détail. */
 function HintContent({
@@ -166,10 +168,13 @@ export function GameScreen(props: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [aidsOpen, setAidsOpen] = useState(false);
   const [combosOpen, setCombosOpen] = useState(false);
-  const [calcOpen, setCalcOpen] = useState(false);
+  const [finderOpen, setFinderOpen] = useState(false);
   const [virtualOpen, setVirtualOpen] = useState(false);
   const [target, setTarget] = useState<DigitTarget>('grid');
-  const [calc, setCalc] = useState<CalculatorState>(emptyCalculator);
+  const [finder, setFinder] = useState<FinderState>(emptyFinder);
+  // Calculatrice : son état reste tant que la partie est ouverte, même si on ferme sa fenêtre.
+  const [calcOpen, setCalcOpen] = useState(false);
+  const [calcState, setCalcState] = useState<CalcState>(emptyCalc);
   const [virtualSum, setVirtualSum] = useState('');
   /** Résultat de la dernière vérification : case → chiffre jugé faux (la marque disparaît si on le change). */
   const [checked, setChecked] = useState<ReadonlyMap<number, number>>(new Map());
@@ -303,16 +308,12 @@ export function GameScreen(props: Props) {
   const blocked = paused || isOver(game);
   const aids = game.aids;
   const digitTarget: DigitTarget =
-    target === 'calculator' && calcOpen
-      ? 'calculator'
-      : target === 'virtual' && virtualOpen
-        ? 'virtual'
-        : 'grid';
+    target === 'finder' && finderOpen ? 'finder' : target === 'virtual' && virtualOpen ? 'virtual' : 'grid';
 
   /** Grand pavé : chiffre dans la grille, ou dans le champ de la fenêtre active. */
   const onDigit = (d: number) => {
     if (blocked) return;
-    if (digitTarget === 'calculator') setCalc((c) => typeInCalculator(c, d));
+    if (digitTarget === 'finder') setFinder((c) => typeInFinder(c, d));
     else if (digitTarget === 'virtual') {
       setVirtualSum((v) => {
         const next = (v === '0' ? '' : v) + String(d);
@@ -498,15 +499,21 @@ export function GameScreen(props: Props) {
         onHint={onHint}
         hintEnabled={aids.hint}
         onCombinations={() => setCombosOpen((o) => !o)}
-        onCalculator={() => {
-          setCalcOpen((o) => !o);
-          setTarget('calculator');
+        onCalculator={() => setCalcOpen((o) => !o)}
+        onFinder={() => {
+          setFinderOpen((o) => !o);
+          setTarget('finder');
         }}
         onVirtualCages={() => {
           setVirtualOpen((o) => !o);
           setTarget('virtual');
         }}
-        open={{ combinations: combosOpen, calculator: calcOpen, virtualCages: virtualOpen }}
+        open={{
+          combinations: combosOpen,
+          finder: finderOpen,
+          calculator: calcOpen,
+          virtualCages: virtualOpen,
+        }}
       />
 
       {!blocked && hint && (
@@ -560,15 +567,26 @@ export function GameScreen(props: Props) {
       {!blocked && calcOpen && (
         <FloatingPanel
           title={T.calculatorTitle}
-          start={{ x: panelX('left'), y: 70 }}
+          start={{ x: panelX('right') + 70, y: 70 }}
           onClose={() => setCalcOpen(false)}
+          compact
         >
-          <CalculatorContent
-            calc={calc}
-            lines={calculatorLines(Number(calc.sum), Number(calc.count), calc.required, calc.excluded)}
+          <CalculatorContent state={calcState} onChange={setCalcState} />
+        </FloatingPanel>
+      )}
+
+      {!blocked && finderOpen && (
+        <FloatingPanel
+          title={T.finderTitle}
+          start={{ x: panelX('left'), y: 70 }}
+          onClose={() => setFinderOpen(false)}
+        >
+          <FinderContent
+            calc={finder}
+            lines={finderLines(Number(finder.sum), Number(finder.count), finder.required, finder.excluded)}
             onChange={(c) => {
-              setCalc(c);
-              setTarget('calculator');
+              setFinder(c);
+              setTarget('finder');
             }}
           />
         </FloatingPanel>

@@ -7,6 +7,7 @@ import { TEXTS } from '../../texts/fr';
 import { Icon } from '../icons';
 import type { ComboLine, ComboSource } from './aids';
 import type { Aids, VirtualCage } from './state';
+import { display, pressKey, type CalcKey, type CalcState } from './calculator';
 
 const T = TEXTS.game;
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -17,8 +18,11 @@ export function FloatingPanel({
   start,
   onClose,
   children,
+  compact = false,
 }: {
   title: string;
+  /** Fenêtre étroite (calculatrice), pour masquer la grille le moins possible. */
+  compact?: boolean;
   /** Position de départ, en pixels depuis le coin haut gauche de l'écran. */
   start: { x: number; y: number };
   onClose: () => void;
@@ -27,7 +31,11 @@ export function FloatingPanel({
   const [pos, setPos] = useState(start);
   const drag = useRef<{ dx: number; dy: number } | null>(null);
   return (
-    <section className="floating" style={{ left: pos.x, top: pos.y }} aria-label={title}>
+    <section
+      className={compact ? 'floating compact' : 'floating'}
+      style={{ left: pos.x, top: pos.y }}
+      aria-label={title}
+    >
       <header
         className="floating-bar"
         onPointerDown={(e) => {
@@ -113,7 +121,7 @@ export function CombinationsContent({
   );
 }
 
-export interface CalculatorState {
+export interface FinderState {
   sum: string;
   count: string;
   active: 'sum' | 'count';
@@ -123,7 +131,7 @@ export interface CalculatorState {
   listed: boolean;
 }
 
-export const emptyCalculator = (): CalculatorState => ({
+export const emptyFinder = (): FinderState => ({
   sum: '',
   count: '',
   active: 'sum',
@@ -133,7 +141,7 @@ export const emptyCalculator = (): CalculatorState => ({
 });
 
 /** Saisie d'un chiffre (ou de « 0 ») dans le champ actif de la calculatrice. */
-export function typeInCalculator(calc: CalculatorState, digit: number): CalculatorState {
+export function typeInFinder(calc: FinderState, digit: number): FinderState {
   const field = calc[calc.active];
   const max = calc.active === 'sum' ? 45 : 9;
   const next = field === '0' ? String(digit) : field + String(digit);
@@ -142,14 +150,14 @@ export function typeInCalculator(calc: CalculatorState, digit: number): Calculat
 }
 
 /** Calculatrice libre : « Somme » et « Nombre de cases », remplis avec le pavé chiffres. */
-export function CalculatorContent({
+export function FinderContent({
   calc,
   lines,
   onChange,
 }: {
-  calc: CalculatorState;
+  calc: FinderState;
   lines: number[][];
-  onChange: (calc: CalculatorState) => void;
+  onChange: (calc: FinderState) => void;
 }) {
   const field = (name: 'sum' | 'count', label: string) => (
     <button
@@ -175,7 +183,7 @@ export function CalculatorContent({
         {field('count', T.calcCount)}
       </div>
       <div className="calc-keys">
-        <button type="button" onClick={() => onChange(typeInCalculator(calc, 0))}>
+        <button type="button" onClick={() => onChange(typeInFinder(calc, 0))}>
           0
         </button>
         <button type="button" onClick={() => onChange({ ...calc, [calc.active]: '', listed: false })}>
@@ -316,6 +324,45 @@ export function AidsContent({
         <button type="button" onClick={() => onChange(defaults)}>
           {T.allAids}
         </button>
+      </div>
+    </div>
+  );
+}
+
+const CALC_KEYS: CalcKey[][] = [
+  ['C', '←', '÷', '×'],
+  ['7', '8', '9', '−'],
+  ['4', '5', '6', '+'],
+  ['1', '2', '3', '='],
+  ['0'],
+];
+
+/** Calculatrice (évolution E3) : ses propres touches, l'opération en cours et le résultat. */
+export function CalculatorContent({
+  state,
+  onChange,
+}: {
+  state: CalcState;
+  onChange: (state: CalcState) => void;
+}) {
+  const { operation, value } = display(state, T.calcError);
+  return (
+    <div className="calculator">
+      <div className="calc-screen" aria-live="polite">
+        <span className="calc-operation">{operation || ' '}</span>
+        <strong className="calc-value">{value || ' '}</strong>
+      </div>
+      <div className="calc-pad">
+        {CALC_KEYS.flat().map((key) => (
+          <button
+            key={key}
+            type="button"
+            className={key === '=' ? 'primary calc-equals' : /d/.test(key) ? 'calc-digit' : 'calc-op'}
+            onClick={() => onChange(pressKey(state, key))}
+          >
+            {key}
+          </button>
+        ))}
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { cageAnchor, parseSolution } from '../../engine/model';
 import hardBank from '../../data/bank-hard.json';
 import {
   allDistinct,
-  calculatorLines,
+  finderLines,
   combinationLines,
   comboSources,
   conflictCells,
@@ -112,11 +112,11 @@ describe('combinaisons', () => {
   });
 
   it('calculatrice : 25 en 4 cases, avec un chiffre obligatoire et un exclu', () => {
-    expect(calculatorLines(25, 4, 0, 0)).toHaveLength(6);
-    expect(calculatorLines(25, 4, 1 << 8, 1 << 0)).toEqual(
-      calculatorLines(25, 4, 1 << 8, 1 << 0).filter((d) => d.includes(9) && !d.includes(1)),
+    expect(finderLines(25, 4, 0, 0)).toHaveLength(6);
+    expect(finderLines(25, 4, 1 << 8, 1 << 0)).toEqual(
+      finderLines(25, 4, 1 << 8, 1 << 0).filter((d) => d.includes(9) && !d.includes(1)),
     );
-    expect(calculatorLines(10, 0, 0, 0)).toEqual([]);
+    expect(finderLines(10, 0, 0, 0)).toEqual([]);
   });
 });
 

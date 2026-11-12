@@ -116,7 +116,7 @@ export function combinationLines(source: ComboSource, values: readonly number[])
 }
 
 /** Calculatrice libre : combinaisons d'une somme en N cases, avec chiffres obligatoires et exclus. */
-export function calculatorLines(sum: number, count: number, required: number, excluded: number): number[][] {
+export function finderLines(sum: number, count: number, required: number, excluded: number): number[][] {
   if (count < 1 || count > 9) return [];
   return combinationsWith(count, sum, required, excluded).map(digitsOf);
 }
