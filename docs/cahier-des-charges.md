@@ -208,7 +208,7 @@ L'écran de jeu reprend la disposition de l'application de référence : la gril
 
 **Somme de cages (bouton « + », évolution E4)**
 
-Le bouton « + » sert à additionner rapidement les sommes de plusieurs cages, par exemple pour appliquer la règle des 45. *Fonctionnement à confirmer par l'utilisateur avant le développement :*
+Le bouton « + » (libellé « Somme ») sert à additionner rapidement les sommes de plusieurs cages, par exemple pour appliquer la règle des 45. Fonctionnement confirmé par l'utilisateur le 12 novembre 2026 :
 
 1. Le bouton « + » active le mode Somme.
 2. En mode Somme, toucher une cage la sélectionne entièrement (toutes ses cases sont surlignées dans une couleur dédiée) ; la toucher à nouveau la désélectionne.
@@ -216,13 +216,13 @@ Le bouton « + » sert à additionner rapidement les sommes de plusieurs cages, 
    - le total des sommes des cages sélectionnées (par exemple « Σ = 67 ») ;
    - le nombre de cages et de cases sélectionnées (par exemple « 4 cages, 11 cases ») ;
    - si les cases sélectionnées couvrent une ou plusieurs lignes, colonnes ou blocs complets, plus quelques cases : la différence avec 45 × (nombre d'unités), c'est-à-dire la somme des cases qui dépassent. Cet affichage est une aide désactivable (section 9), car il donne une partie du raisonnement.
-4. On peut aussi ajouter des cases isolées déjà remplies : leur chiffre est alors ajouté au total.
+4. On peut aussi ajouter des cases isolées déjà remplies : leur chiffre est alors ajouté au total. Un interrupteur du bandeau, « Ajouter : cages | cases remplies », choisit ce que fait un toucher (cage entière par défaut).
 5. Toucher à nouveau « + » ou « Fermer » quitte le mode Somme et efface la sélection.
 6. Depuis le bandeau, un bouton « Créer une cage virtuelle » transforme la sélection en cage virtuelle.
 
 **Cages virtuelles (refonte, évolution E5)**
 
-Une cage virtuelle sert à noter une déduction du type « ces cases font X au total », puis à exploiter cette information comme une vraie cage. *Refonte à confirmer par l'utilisateur avant le développement ; la version actuelle reste en place jusqu'à cette confirmation.*
+Une cage virtuelle sert à noter une déduction du type « ces cases font X au total », puis à exploiter cette information comme une vraie cage. Refonte confirmée par l'utilisateur le 12 novembre 2026 ; les cages virtuelles déjà créées sont conservées.
 
 1. **Création rapide** : on sélectionne des cases, puis « Créer une cage virtuelle ». L'application propose la somme quand elle peut la calculer :
    - sélection = réunion de cages entières → somme de ces cages ;
@@ -230,7 +230,7 @@ Une cage virtuelle sert à noter une déduction du type « ces cases font X au t
    - sinon, le joueur saisit la somme lui-même.
 2. **Affichage** : contour en pointillé d'une couleur distincte, avec la somme dans un petit cadre de la même couleur. Plusieurs cages virtuelles peuvent coexister, chacune avec sa couleur.
 3. **Exploitation** :
-   - si les cases de la cage virtuelle sont toutes dans une même ligne, colonne ou un même bloc (donc sans chiffre répété), la fenêtre « Combinaisons de la cage » fonctionne dessus, avec possibilité de barrer ;
+   - si les cases de la cage virtuelle se voient toutes deux à deux (même ligne, colonne, bloc ou même cage : donc sans chiffre répété), la fenêtre « Combinaisons de la cage » fonctionne dessus, avec possibilité de barrer ;
    - sinon, elle affiche seulement la somme et le nombre de cases, et indique que des chiffres peuvent se répéter ;
    - le signalement des conflits vérifie aussi les cages virtuelles (somme dépassée, combinaison impossible).
 4. **Gestion** : une liste des cages virtuelles permet de les masquer, les afficher ou les supprimer. Elles sont sauvegardées avec la partie et effacées par « Recommencer la grille ».
@@ -476,7 +476,7 @@ Claude Code développe l'application en neuf étapes, dans l'ordre. Une étape n
 - [x] Rôle des icônes « bloc-notes » et « crayon » : précisé et intégré en section 7.
 - [ ] Valider ou ajuster les pondérations et les seuils de la section 5 après le calibrage (étape 8).
 - [x] Fixer la taille de la banque ULTIME d'après le temps de génération mesuré à l'étape 3 : 30 grilles, produites en environ 6 minutes.
-- [ ] Confirmer le fonctionnement du mode Somme (E4) et la refonte des cages virtuelles (E5) avant leur développement.
+- [x] Confirmer le fonctionnement du mode Somme (E4) et la refonte des cages virtuelles (E5) avant leur développement : confirmés le 12 novembre 2026 (interrupteur « cages | cases », règle « cases qui se voient deux à deux »).
 - [ ] Choisir le nom de l'application et son icône.
 - [ ] Créer un compte GitHub (gratuit), nécessaire à l'hébergement sur GitHub Pages, si tu n'en as pas déjà un.
 - [ ] Décider si la génération de grilles directement sur l'iPad (option V1.1) est utile, une fois la banque en place.

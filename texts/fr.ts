@@ -104,7 +104,17 @@ export const TEXTS = {
     calcList: 'Lister les combinaisons',
     calcClear: 'C',
     virtualTitle: 'Cages virtuelles',
-    virtualHelp: 'Sélectionne des cases, tape leur somme avec le pavé, puis crée la cage.',
+    virtualHelp:
+      'Sélectionne des cases, puis crée la cage. La somme est proposée quand elle se déduit des cages ; sinon, tape-la avec le grand pavé.',
+    virtualTypeSum: 'Tape la somme avec le grand pavé.',
+    virtualSuggestCages: (n: number) =>
+      n === 1
+        ? 'Somme proposée : celle de la cage entière.'
+        : `Somme proposée : celle des ${n} cages entières.`,
+    virtualSuggestUnit: (unit: string, n: number) =>
+      `Somme proposée : 45 moins ${n === 1 ? 'la cage entière' : `les ${n} cages entières`} du reste de la ${unit}.`,
+    hide: 'Masquer',
+    unhide: 'Afficher',
     virtualCreate: (n: number) => (n <= 1 ? `Créer avec ${n} case` : `Créer avec ${n} cases`),
     virtualNone: 'Aucune cage virtuelle.',
     virtualItem: (sum: number, n: number) => `${sum} en ${n} case${n > 1 ? 's' : ''}`,

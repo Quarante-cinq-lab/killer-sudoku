@@ -9,6 +9,7 @@ import type { ComboLine, ComboSource } from './aids';
 import type { Aids, VirtualCage } from './state';
 import { display, pressKey, type CalcKey, type CalcState } from './calculator';
 import type { SumInfo } from './sumMode';
+import { virtualColor } from './virtual';
 
 const T = TEXTS.game;
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -97,9 +98,10 @@ export function CombinationsContent({
                 : T.cageLabel(source.sum, source.cells.length)}
             </h3>
             {mayRepeat(source) && <p className="panel-help">{T.mayRepeat}</p>}
-            {lines.length === 0 && <p className="panel-help">{T.noCombination}</p>}
+            {!mayRepeat(source) && lines.length === 0 && <p className="panel-help">{T.noCombination}</p>}
             <div className="combo-list">
-              {lines.map((line) => {
+              {/* Chiffres qui peuvent se répéter : pas de liste de combinaisons (section 7.4, E5). */}
+              {(mayRepeat(source) ? [] : lines).map((line) => {
                 const isStruck = struck[source.key]?.includes(line.mask) ?? false;
                 const greyed = filter && !line.compatible;
                 return (
@@ -226,31 +228,41 @@ export function FinderContent({
   );
 }
 
-/** Cages virtuelles : création à partir de la sélection, liste, suppression. */
+/**
+ * Cages virtuelles (refonte E5) : création à partir de la sélection, avec la somme proposée quand elle se
+ * déduit des cages ; liste avec la couleur de chaque cage, pour la montrer, la masquer ou la supprimer.
+ */
 export function VirtualCagesContent({
   cages,
   selectionSize,
+  suggestion,
   sum,
   onSum,
   onCreate,
   onShow,
+  onToggleHidden,
   onRemove,
 }: {
   cages: readonly VirtualCage[];
   selectionSize: number;
+  /** Somme proposée et son explication, ou null si le joueur doit la taper. */
+  suggestion: { sum: number; text: string } | null;
+  /** Somme tapée par le joueur (elle remplace la proposition). */
   sum: string;
   onSum: (sum: string) => void;
-  onCreate: () => void;
+  onCreate: (sum: number) => void;
   onShow: (cage: VirtualCage) => void;
+  onToggleHidden: (id: number) => void;
   onRemove: (id: number) => void;
 }) {
+  const value = sum !== '' ? Number(sum) : suggestion?.sum;
   return (
     <>
       <p className="panel-help">{T.virtualHelp}</p>
       <div className="calc-fields">
         <div className="calc-field active">
           <span>{T.calcSum}</span>
-          <strong>{sum || '–'}</strong>
+          <strong>{value ?? '–'}</strong>
         </div>
         <div className="calc-keys vertical">
           <button
@@ -264,11 +276,14 @@ export function VirtualCagesContent({
           </button>
         </div>
       </div>
+      {selectionSize > 0 && sum === '' && (
+        <p className="panel-help">{suggestion ? suggestion.text : T.virtualTypeSum}</p>
+      )}
       <button
         type="button"
         className="primary calc-list"
-        disabled={selectionSize === 0 || !sum}
-        onClick={onCreate}
+        disabled={selectionSize === 0 || value === undefined || value < 1}
+        onClick={() => value !== undefined && onCreate(value)}
       >
         {T.virtualCreate(selectionSize)}
       </button>
@@ -277,10 +292,14 @@ export function VirtualCagesContent({
       ) : (
         <ul className="virtual-list">
           {cages.map((cage) => (
-            <li key={cage.id}>
+            <li key={cage.id} className={cage.hidden ? 'hidden-cage' : ''}>
+              <i className={'virtual-swatch virtual-color-' + virtualColor(cage.id)} />
               <span>{T.virtualItem(cage.sum, cage.cells.length)}</span>
               <button type="button" onClick={() => onShow(cage)}>
                 {T.show}
+              </button>
+              <button type="button" onClick={() => onToggleHidden(cage.id)}>
+                {cage.hidden ? T.unhide : T.hide}
               </button>
               <button type="button" onClick={() => onRemove(cage.id)}>
                 {T.remove}

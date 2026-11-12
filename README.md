@@ -161,7 +161,14 @@ Pour voir le raisonnement d'une grille de la banque : `npm run trace -- data/ban
   change de teinte), « 0 » pour 10, 20…, « C » pour effacer ; chiffres obligatoires ou exclus en option.
 - **Calculatrice** : une vraie calculatrice (+, −, ×, ÷, =, C, ←), avec l'opération en cours et le résultat.
   Le résultat reste affiché quand on ferme puis rouvre la fenêtre pendant la partie.
-- **Cages virtuelles** : sélectionner des cases, taper leur somme, créer. Pointillé orangé, supprimables.
+- **Somme** (colonne de gauche, évolution E4) : toucher des cages pour additionner leurs sommes (Σ) ; le
+  bandeau donne aussi la règle des 45 quand une ligne, une colonne, un bloc ou une bande est entièrement
+  couvert (aide désactivable). Interrupteur « cages | cases remplies ». « Créer une cage virtuelle » en un geste.
+- **Cages virtuelles** (refonte E5) : sélectionner des cases puis « Créer ». La somme est proposée quand elle
+  se déduit (cages entières, ou 45 moins des cages entières d'une ligne, colonne ou bloc). Une couleur par
+  cage ; on peut les montrer, les masquer ou les supprimer. Les combinaisons fonctionnent quand leurs cases se
+  voient deux à deux ; les conflits (somme dépassée ou impossible) sont signalés. Une cage virtuelle n'est
+  jamais comparée à la solution : c'est une note.
 - Les fenêtres se déplacent en faisant glisser leur barre de titre.
 - **Aides** (menu « ⋯ » → Aides de la partie) : surlignages, conflits, nettoyage automatique des notes,
   filtrage des combinaisons, notes automatiques, vérification, indice. Préréglage **Puriste**.

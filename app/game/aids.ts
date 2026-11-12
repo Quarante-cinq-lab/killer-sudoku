@@ -82,7 +82,8 @@ export function comboSources(
     { key: `c${cageAnchor(cage)}`, virtual: false, sum: cage.sum, cells: cage.cells },
   ];
   for (const v of virtualCages) {
-    if (v.cells.includes(cell)) sources.push({ key: `v${v.id}`, virtual: true, sum: v.sum, cells: v.cells });
+    if (!v.hidden && v.cells.includes(cell))
+      sources.push({ key: `v${v.id}`, virtual: true, sum: v.sum, cells: v.cells });
   }
   return sources;
 }

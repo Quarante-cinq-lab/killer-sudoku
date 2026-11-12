@@ -25,8 +25,9 @@ import {
   wrongCells,
 } from './aids';
 import { emptyCalc, type CalcState } from './calculator';
+import { suggestSum, virtualConflictCells } from './virtual';
 import { emptySelection, sumInfo, toggleInSelection, type SumSelection } from './sumMode';
-import { regionName } from '../../engine/logic/describe';
+import { regionName, unitName } from '../../engine/logic/describe';
 import { formatTime, now, readClock, startClock, stopClock, stoppedClock, type Clock } from './clock';
 import { Keypad } from './Keypad';
 import {
@@ -58,6 +59,7 @@ import {
   PURIST_AIDS,
   redo,
   removeVirtualCage,
+  toggleVirtualHidden,
   setAids,
   setDigit,
   toggleCombination,
@@ -408,7 +410,12 @@ export function GameScreen(props: Props) {
         aids.highlightSameDigits && focusValue
           ? new Set(game.values.flatMap((v, c) => (v === focusValue ? [c] : [])))
           : EMPTY,
-      conflicts: aids.conflicts ? conflictCells(record, game.values) : EMPTY,
+      conflicts: aids.conflicts
+        ? new Set([
+            ...conflictCells(record, game.values),
+            ...virtualConflictCells(record, game.values, game.virtualCages),
+          ])
+        : EMPTY,
       // Chiffres faux : vérification immédiate (mode erreurs), ou dernière vérification à la demande.
       wrong: game.errorMode
         ? wrongDigits({ errorMode: game.errorMode, values: game.values }, solution)
@@ -662,19 +669,31 @@ export function GameScreen(props: Props) {
           <VirtualCagesContent
             cages={game.virtualCages}
             selectionSize={selection.length}
+            suggestion={(() => {
+              const s = suggestSum(record, selection);
+              if (!s) return null;
+              return {
+                sum: s.sum,
+                text:
+                  s.reason === 'cages'
+                    ? T.virtualSuggestCages(s.cages)
+                    : T.virtualSuggestUnit(unitName(s.unit), s.cages),
+              };
+            })()}
             sum={virtualSum}
             onSum={(sum) => {
               setVirtualSum(sum);
               setTarget('virtual');
             }}
-            onCreate={() => {
-              update((s) => addVirtualCage(s, selection, Number(virtualSum)));
+            onCreate={(sum) => {
+              update((s) => addVirtualCage(s, selection, sum));
               setVirtualSum('');
             }}
             onShow={(cage) => {
               setSelection(cage.cells);
               setFocus(cage.cells[0]);
             }}
+            onToggleHidden={(id) => update((s) => toggleVirtualHidden(s, id))}
             onRemove={(id) => update((s) => removeVirtualCage(s, id))}
           />
         </FloatingPanel>

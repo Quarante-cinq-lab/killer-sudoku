@@ -28,6 +28,12 @@
   --conflict: #b45309;
   --conflict-fill: #fdebd3;
   --virtual: #d9730d; /* cages virtuelles : pointillé orangé */
+  --virtual-1: #d9730d;
+  --virtual-2: #0b7a75;
+  --virtual-3: #b0306a;
+  --virtual-4: #2f6fde;
+  --virtual-5: #6a7a12;
+  --virtual-6: #8a4fd0;
   --struck: #9a97a8;
   --sum-fill: #e6dcfb; /* cages du mode Somme */
   /* Couleurs des niveaux dans les statistiques (palette validée pour les daltonismes). */
@@ -69,6 +75,12 @@
     --conflict: #f0a050;
     --conflict-fill: #47331d;
     --virtual: #f0a050;
+    --virtual-1: #f0a050;
+    --virtual-2: #4cc3bd;
+    --virtual-3: #f07aac;
+    --virtual-4: #7aa7ff;
+    --virtual-5: #b5c95a;
+    --virtual-6: #b892f0;
     --struck: #77748a;
     --sum-fill: #3a2f5c;
     --series-1: #3987e5;
@@ -109,6 +121,12 @@
   --conflict: #f0a050;
   --conflict-fill: #47331d;
   --virtual: #f0a050;
+  --virtual-1: #f0a050;
+  --virtual-2: #4cc3bd;
+  --virtual-3: #f07aac;
+  --virtual-4: #7aa7ff;
+  --virtual-5: #b5c95a;
+  --virtual-6: #b892f0;
   --struck: #77748a;
   --sum-fill: #3a2f5c;
   --series-1: #3987e5;
@@ -417,20 +435,60 @@ button.secondary {
   font-weight: 600;
 }
 
+/* Cages virtuelles : une couleur par cage (classe virtual-color-N sur le groupe SVG). */
 .virtual-cage-line {
   fill: none;
-  stroke: var(--virtual);
+  stroke: var(--vc);
   stroke-width: 3;
   stroke-dasharray: 9 7;
 }
 
 .virtual-sum-bg {
   fill: var(--surface);
+  stroke: var(--vc);
+  stroke-width: 2;
 }
 
 .virtual-sum {
-  fill: var(--virtual);
+  fill: var(--vc);
   font-weight: 600;
+}
+
+.virtual-color-1 {
+  --vc: var(--virtual-1);
+}
+
+.virtual-color-2 {
+  --vc: var(--virtual-2);
+}
+
+.virtual-color-3 {
+  --vc: var(--virtual-3);
+}
+
+.virtual-color-4 {
+  --vc: var(--virtual-4);
+}
+
+.virtual-color-5 {
+  --vc: var(--virtual-5);
+}
+
+.virtual-color-6 {
+  --vc: var(--virtual-6);
+}
+
+.virtual-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 3px dashed var(--vc);
+  flex: none;
+}
+
+.virtual-list li.hidden-cage span {
+  opacity: 0.45;
+  text-decoration: line-through;
 }
 
 .selected-fill {

@@ -34,6 +34,8 @@ export interface VirtualCage {
   id: number;
   sum: number;
   cells: number[];
+  /** Masquée par le joueur : ni dessinée, ni utilisée par les combinaisons et les conflits. */
+  hidden?: boolean;
 }
 
 /** Ce qui n'est pas dans les cases : combinaisons barrées (par cage) et cages virtuelles. */
@@ -383,6 +385,13 @@ export function removeVirtualCage(state: GameState, id: number): GameState {
   if (isOver(state)) return state;
   const struck = withoutKey(state.struck, `v${id}`);
   return commit(state, new Map(), { struck, virtualCages: state.virtualCages.filter((v) => v.id !== id) });
+}
+
+/** Masque ou réaffiche une cage virtuelle (annulable). */
+export function toggleVirtualHidden(state: GameState, id: number): GameState {
+  if (isOver(state)) return state;
+  const virtualCages = state.virtualCages.map((v) => (v.id === id ? { ...v, hidden: !v.hidden } : v));
+  return commit(state, new Map(), { struck: state.struck, virtualCages });
 }
 
 export function canUndo(state: GameState): boolean {
