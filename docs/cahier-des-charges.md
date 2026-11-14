@@ -189,11 +189,12 @@ L'écran de jeu reprend la disposition de l'application de référence : la gril
 
 | Zone | Contenu |
 | --- | --- |
-| Colonne gauche | Annuler, Rétablir, Indice, Somme de cages (« + », section 7.4) |
+| Colonne gauche | Annuler, Rétablir, Indice |
 | Pavé chiffres (grand) | 1 à 9 : saisie d'un chiffre définitif |
 | Pavé notes (plus petit, autre teinte) | 1 à 9 : ajoute la note, ou la retire si elle est déjà présente |
-| Colonne droite | Combinaisons de la cage (de la case sélectionnée), Combinaisons (somme et nombre de cases au choix), Calculatrice, Menu Options (icône crayon), Cages virtuelles |
+| Colonne droite | Combinaisons de la cage (de la case sélectionnée), Combinaisons (somme et nombre de cases au choix), Calculatrice, Menu Options (icône crayon) |
 
+- Toutes les touches du clavier réagissent dès que le doigt se pose, sans attendre qu'il se relève, et ne changent pas de taille pendant l'appui (retours d'essai du 15 novembre 2026 : des appuis n'étaient pas pris en compte).
 - Un chiffre définitif remplace les notes de la case.
 - Une note s'applique à toutes les cases sélectionnées.
 - L'effacement passe par le menu Options (« Effacer la sélection », « Tout effacer »).
@@ -203,26 +204,22 @@ L'écran de jeu reprend la disposition de l'application de référence : la gril
 
 - **Combinaisons de la cage** : fenêtre qui s'ouvre sur la cage de la case sélectionnée (et sur ses cages virtuelles) et liste toutes les combinaisons possibles pour sa taille et sa somme. Un toucher barre ou rétablit une combinaison. Ces choix sont mémorisés par cage et sauvegardés. La fenêtre est flottante, déplaçable, et se ferme par un « x ».
 - **Combinaisons** (anciennement « Calculatrice » ; évolution E3) : fenêtre flottante indépendante de la grille, comme dans l'application de référence. Deux champs, « Somme » et « Nombre de cases », se remplissent avec le pavé chiffres, chiffre par chiffre. Une touche « 0 » permet d'écrire les nombres à deux chiffres (1 puis 0 pour 10, 2 puis 5 pour 25). Une touche « C » vide le champ actif. Un toucher sur un champ le rend actif. Le bouton « Lister les combinaisons » affiche toutes les combinaisons possibles, par exemple 25 en 4 cases. En option, on peut ajouter des chiffres obligatoires ou exclus.
-- **Calculatrice** (évolution E3) : une vraie calculatrice, avec sa propre icône. Fenêtre flottante et déplaçable, qui ne masque pas la grille plus que nécessaire. Touches 0 à 9, +, −, ×, ÷, =, C (tout effacer) et ← (effacer le dernier chiffre). Elle affiche l'opération en cours et le résultat. Le dernier résultat reste affiché quand on ferme puis rouvre la calculatrice pendant la partie.
+- **Calculatrice** (évolution E3) : une vraie calculatrice, avec sa propre icône. Fenêtre flottante et déplaçable, qui ne masque pas la grille plus que nécessaire. Touches 0 à 9, +, −, ×, ÷, =, C (tout effacer) et ← (effacer le dernier chiffre). Elle affiche l'opération en cours et le résultat. Le dernier résultat reste affiché quand on ferme puis rouvre la calculatrice pendant la partie. Ses touches font au moins 60 px de haut, pour être utilisables avec de gros doigts (retours d'essai du 15 novembre 2026).
 - Les fenêtres « Combinaisons » et « Calculatrice » ne sont pas des aides : elles restent disponibles même avec le préréglage Puriste.
 
-**Somme de cages (bouton « + », évolution E4)**
+**Somme et combinaisons rapides (« + » et « ? »)**
 
-Le bouton « + » (libellé « Somme ») sert à additionner rapidement les sommes de plusieurs cages, par exemple pour appliquer la règle des 45. Fonctionnement confirmé par l'utilisateur le 12 novembre 2026 :
+Retours d'essai du 15 novembre 2026 : elles remplacent le mode Somme de l'évolution E4 (bouton « Somme »), retiré.
 
-1. Le bouton « + » active le mode Somme.
-2. En mode Somme, toucher une cage la sélectionne entièrement (toutes ses cases sont surlignées dans une couleur dédiée) ; la toucher à nouveau la désélectionne.
-3. Un bandeau flottant affiche en permanence :
-   - le total des sommes des cages sélectionnées (par exemple « Σ = 67 ») ;
-   - le nombre de cages et de cases sélectionnées (par exemple « 4 cages, 11 cases ») ;
-   - si les cases sélectionnées couvrent une ou plusieurs lignes, colonnes ou blocs complets, plus quelques cases : la différence avec 45 × (nombre d'unités), c'est-à-dire la somme des cases qui dépassent. Cet affichage est une aide désactivable (section 9), car il donne une partie du raisonnement.
-4. On peut aussi ajouter des cases isolées déjà remplies : leur chiffre est alors ajouté au total. Un interrupteur du bandeau, « Ajouter : cages | cases remplies », choisit ce que fait un toucher (cage entière par défaut).
-5. Toucher à nouveau « + » ou « Fermer » quitte le mode Somme et efface la sélection.
-6. Depuis le bandeau, un bouton « Créer une cage virtuelle » transforme la sélection en cage virtuelle.
+1. Quand la sélection contient plusieurs cases portant la somme d'une cage (le petit nombre en haut à gauche), un petit bouton « + » apparaît sur la grille, à côté de la dernière case sélectionnée. Le toucher affiche à sa place le total de ces sommes, par exemple 13 + 9 + 2 = 24. Seules les sommes des cages comptent, pas les chiffres posés.
+2. Quand la sélection compte plusieurs cases mais une seule somme de cage, un bouton « ? » apparaît : il affiche les combinaisons possibles pour cette somme et le nombre de cases sélectionnées.
+3. Ces boutons disparaissent dès que la sélection change.
 
 **Cages virtuelles (refonte, évolution E5)**
 
-Une cage virtuelle sert à noter une déduction du type « ces cases font X au total », puis à exploiter cette information comme une vraie cage. Refonte confirmée par l'utilisateur le 12 novembre 2026 ; les cages virtuelles déjà créées sont conservées.
+Une cage virtuelle sert à noter une déduction du type « ces cases font X au total », puis à exploiter cette information comme une vraie cage. Refonte confirmée par l'utilisateur le 12 novembre 2026.
+
+*Retours d'essai du 15 novembre 2026 : le bouton et la fenêtre « Cages virtuelles » sont retirés du clavier. On ne peut donc plus en créer ; celles qui existent déjà dans une partie restent affichées, utilisées par les combinaisons et les conflits, et effacées par « Recommencer la grille ». Les règles ci-dessous restent valables pour elles.*
 
 1. **Création rapide** : on sélectionne des cases, puis « Créer une cage virtuelle ». L'application propose la somme quand elle peut la calculer :
    - sélection = réunion de cages entières → somme de ces cages ;
@@ -262,7 +259,7 @@ Le joueur veut savoir tout de suite qu'un chiffre est faux, pour repérer où so
 3. Le compteur s'affiche dans la barre supérieure, à côté du chronomètre : « Erreurs : 1 / 3 ».
 4. Un chiffre faux reste affiché en rouge jusqu'à ce qu'il soit effacé ou remplacé. L'effacer ne retire pas l'erreur du compteur.
 5. Les notes ne sont jamais vérifiées et ne comptent pas comme des erreurs.
-6. Annuler ne retire pas une erreur du compteur.
+6. Annuler ne retire pas une erreur du compteur (une erreur reste une erreur), mais remet exactement l'état précédent : la case retrouve ses notes, et les cases voisines retrouvent celles que le nettoyage automatique avait retirées.
 7. À la 3e erreur, la partie s'arrête :
    - la grille est bloquée (plus aucune saisie possible) ;
    - un écran « Partie perdue » affiche le temps écoulé et propose « Recommencer la grille » ou « Retour à l'accueil » ;
@@ -323,19 +320,16 @@ Toutes les aides peuvent être activées ou désactivées dans les Réglages, et
 | Nettoyage automatique des notes | Activée | Retire une note devenue impossible après la saisie d'un chiffre dans la même ligne, colonne, bloc ou cage |
 | Filtrage des combinaisons | Activée | Grisé des combinaisons incompatibles avec les chiffres déjà posés |
 | Notes automatiques | Activée | Commande « Remplir toutes les notes » du menu Options (section 7.4) ; la masquer si l'aide est désactivée |
-| Calcul de la règle des 45 en mode Somme | Activée | Dans le bandeau du mode Somme (section 7.4), différence avec 45 × (nombre d'unités couvertes) |
 | Vérification | À la demande | Bouton qui marque les chiffres faux par rapport à la solution ; sans objet quand le mode erreurs est actif (les chiffres faux sont déjà signalés), le bouton est alors masqué |
-| Indice | À la demande | Voir ci-dessous |
+| Indice | À la demande | Révèle le chiffre de la case sélectionnée, 3 fois au plus par partie (voir ci-dessous) |
 
-**Indice progressif**
+**Indice**
 
-Chaque appui sur le bouton Indice donne un niveau de détail supplémentaire sur la même déduction :
+Retours d'essai du 15 novembre 2026 : l'indice progressif (technique, explication, application) est retiré, car ses explications n'aidaient pas en pratique. Il est remplacé par :
 
-1. le nom de la technique et la zone concernée (par exemple « Règle des 45 dans le bloc 5 ») ;
-2. l'explication du raisonnement, avec la mise en évidence des cases utilisées ;
-3. l'application de la déduction (chiffre placé ou notes éliminées).
-
-L'indice part de l'état actuel de la grille du joueur. Si la grille contient une erreur, l'indice le signale au lieu de proposer une déduction.
+1. On sélectionne une case, puis on touche « Indice » : le bon chiffre s'inscrit dans la case, à la place d'un chiffre faux éventuel. Ce chiffre n'est jamais compté comme une erreur.
+2. Au plus 3 indices par partie : le bouton affiche le nombre restant, puis se grise.
+3. Sans case sélectionnée, ou si la case contient déjà le bon chiffre, aucun indice n'est consommé.
 
 Les indices et les vérifications utilisés sont comptés dans l'historique. Une partie terminée avec au moins un indice est marquée comme telle dans les statistiques.
 
@@ -449,7 +443,7 @@ Claude Code développe l'application en neuf étapes, dans l'ordre. Une étape n
 | 2. Solveur logique et notation | Techniques des groupes A et B, puis C et D ; trace lisible de chaque étape ; calcul du score ; fichier de configuration | Au moins 3 tests par technique ; la trace d'une grille de test est lisible par un humain |
 | 3. Générateur et banque | Algorithme de la section 6, script en ligne de commande, dédoublonnage, rapport | Banque initiale produite ; 100 % des grilles uniques et résolues par déduction ; rapport de répartition par niveau |
 | 4. Écran de jeu | Grille SVG, sélection simple et multiple, double clavier, notes, annuler/rétablir, chronomètre, pause, victoire | Une partie complète jouable sur iPad, en portrait et en paysage |
-| 5. Outils et aides | Combinaisons, calculatrice, cages virtuelles, aides de la section 9, indice progressif | Chaque aide s'active et se désactive ; l'indice nomme correctement la technique sur 10 positions de test |
+| 5. Outils et aides | Combinaisons, calculatrice, cages virtuelles, aides de la section 9, indice progressif (remplacé le 15 novembre 2026, voir section 9) | Chaque aide s'active et se désactive ; l'indice nomme correctement la technique sur 10 positions de test |
 | 6. Bibliothèque et données | Accueil, bibliothèque, sauvegarde automatique, historique, statistiques, réglages, export et import | Fermer puis rouvrir l'application restitue exactement chaque partie ; une grille terminée se rejoue |
 | 7. PWA et déploiement | Manifeste, icône, service worker, déploiement GitHub Pages, guide d'installation sur l'iPad | Installation depuis Safari ; fonctionnement complet en mode avion |
 | 8. Calibrage | Script de calibrage ; 10 grilles jouées par niveau ; ajustement des seuils ; régénération si besoin | Temps réels dans les fourchettes de la section 5.2, à ± 20 % près |
@@ -463,6 +457,15 @@ Claude Code développe l'application en neuf étapes, dans l'ordre. Une étape n
 | E3 | « Combinaisons » (ancienne calculatrice) et vraie calculatrice (7.4) | Une opération enchaînée (par exemple 45 − 17 − 9 =) donne le bon résultat ; le résultat reste affiché à la réouverture |
 | E4 | Somme de cages, bouton « + » (7.4) | Après confirmation du fonctionnement : le total et la différence avec la règle des 45 sont justes sur 5 sélections de test |
 | E5 | Refonte des cages virtuelles (7.4) | Après confirmation : somme proposée juste sur les trois cas de création ; conflits signalés ; combinaisons utilisables quand les cases se voient |
+
+**Retours d'essai du 15 novembre 2026**, à réaliser avant le calibrage (étape 8) :
+
+| Retour | Contenu | Critère de recette |
+| --- | --- | --- |
+| R2 | Touches réactives dès que le doigt se pose (7.3) | Un appui sur une touche inscrit toujours le chiffre, même bref ou un peu glissé |
+| R1 | Indice : chiffre de la case sélectionnée, 3 par partie (section 9) | Le bon chiffre s'inscrit ; jamais compté comme erreur ; bouton grisé après 3 indices |
+| R3 | « + » et « ? » sur la grille ; boutons « Somme » et « Cages virtuelles » retirés (7.4) | Total juste des sommes de cages sélectionnées ; combinaisons justes pour une seule somme |
+| R4 | Calculatrice agrandie (7.4) | Touches d'au moins 60 px de haut |
 
 **Consignes pour Claude Code**
 
