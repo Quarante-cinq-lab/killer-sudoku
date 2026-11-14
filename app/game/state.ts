@@ -17,6 +17,9 @@ export const GAME_FORMAT = 3;
 /** Nombre d'erreurs qui arrête la partie quand le mode erreurs est actif (section 7.6). */
 export const MAX_ERRORS = 3;
 
+/** Nombre d'indices par partie (section 9, retours d'essai du 15 novembre 2026). */
+export const MAX_HINTS = 3;
+
 /** Contenu d'une case : un chiffre définitif (0 = vide) et des notes, dans leur ordre de saisie. */
 export interface CellContent {
   value: number;
@@ -59,8 +62,6 @@ export interface Aids {
   autoCleanNotes: boolean;
   filterCombinations: boolean;
   autoNotes: boolean;
-  /** Mode Somme : afficher la règle des 45 (somme des cases qui dépassent d'une zone complète). */
-  sumRule45: boolean;
   check: boolean;
   hint: boolean;
 }
@@ -72,7 +73,6 @@ export const DEFAULT_AIDS: Aids = {
   autoCleanNotes: true,
   filterCombinations: true,
   autoNotes: true,
-  sumRule45: true,
   check: true,
   hint: true,
 };
@@ -85,7 +85,6 @@ export const PURIST_AIDS: Aids = {
   autoCleanNotes: false,
   filterCombinations: false,
   autoNotes: false,
-  sumRule45: false,
   check: false,
   hint: false,
 };
@@ -310,6 +309,22 @@ export function writeCells(
   return commit(state, all);
 }
 
+/**
+ * Indice (section 9) : inscrit le bon chiffre dans la case, à la place d'un chiffre faux éventuel. Ce
+ * chiffre n'est jamais compté comme une erreur. Rien n'est consommé si la case est déjà juste, ou si les
+ * 3 indices de la partie ont été utilisés. Le compteur d'indices n'est pas remis en arrière par « Annuler ».
+ */
+export function revealCell(
+  state: GameState,
+  puzzle: Puzzle,
+  solution: readonly number[],
+  cell: number,
+): GameState {
+  if (isOver(state) || state.hints >= MAX_HINTS || state.values[cell] === solution[cell]) return state;
+  const next = writeCells(state, puzzle, new Map([[cell, { value: solution[cell], notes: [] }]]));
+  return next === state ? state : { ...next, hints: next.hints + 1 };
+}
+
 /** Vide les cases sélectionnées (chiffres et notes). */
 export function eraseCells(state: GameState, cells: readonly number[]): GameState {
   if (isOver(state)) return state;
@@ -385,13 +400,6 @@ export function removeVirtualCage(state: GameState, id: number): GameState {
   if (isOver(state)) return state;
   const struck = withoutKey(state.struck, `v${id}`);
   return commit(state, new Map(), { struck, virtualCages: state.virtualCages.filter((v) => v.id !== id) });
-}
-
-/** Masque ou réaffiche une cage virtuelle (annulable). */
-export function toggleVirtualHidden(state: GameState, id: number): GameState {
-  if (isOver(state)) return state;
-  const virtualCages = state.virtualCages.map((v) => (v.id === id ? { ...v, hidden: !v.hidden } : v));
-  return commit(state, new Map(), { struck: state.struck, virtualCages });
 }
 
 export function canUndo(state: GameState): boolean {

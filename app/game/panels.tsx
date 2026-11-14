@@ -1,15 +1,14 @@
 /**
- * Fenêtres des outils killer (section 7.4) et des aides (section 9) : combinaisons, calculatrice,
- * cages virtuelles (fenêtres flottantes déplaçables) et réglage des aides de la partie.
+ * Fenêtres des outils killer (section 7.4) et des aides (section 9) : combinaisons et calculatrice
+ * (fenêtres flottantes déplaçables), et réglage des aides de la partie.
  */
 import { useRef, useState, type ReactNode } from 'react';
 import { TEXTS } from '../../texts/fr';
 import { Icon } from '../icons';
+import { PressButton } from './Keypad';
 import type { ComboLine, ComboSource } from './aids';
-import type { Aids, VirtualCage } from './state';
+import type { Aids } from './state';
 import { display, pressKey, type CalcKey, type CalcState } from './calculator';
-import type { SumInfo } from './sumMode';
-import { virtualColor } from './virtual';
 
 const T = TEXTS.game;
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -228,90 +227,6 @@ export function FinderContent({
   );
 }
 
-/**
- * Cages virtuelles (refonte E5) : création à partir de la sélection, avec la somme proposée quand elle se
- * déduit des cages ; liste avec la couleur de chaque cage, pour la montrer, la masquer ou la supprimer.
- */
-export function VirtualCagesContent({
-  cages,
-  selectionSize,
-  suggestion,
-  sum,
-  onSum,
-  onCreate,
-  onShow,
-  onToggleHidden,
-  onRemove,
-}: {
-  cages: readonly VirtualCage[];
-  selectionSize: number;
-  /** Somme proposée et son explication, ou null si le joueur doit la taper. */
-  suggestion: { sum: number; text: string } | null;
-  /** Somme tapée par le joueur (elle remplace la proposition). */
-  sum: string;
-  onSum: (sum: string) => void;
-  onCreate: (sum: number) => void;
-  onShow: (cage: VirtualCage) => void;
-  onToggleHidden: (id: number) => void;
-  onRemove: (id: number) => void;
-}) {
-  const value = sum !== '' ? Number(sum) : suggestion?.sum;
-  return (
-    <>
-      <p className="panel-help">{T.virtualHelp}</p>
-      <div className="calc-fields">
-        <div className="calc-field active">
-          <span>{T.calcSum}</span>
-          <strong>{value ?? '–'}</strong>
-        </div>
-        <div className="calc-keys vertical">
-          <button
-            type="button"
-            onClick={() => onSum(sum && sum !== '0' && Number(sum + '0') <= 405 ? sum + '0' : sum)}
-          >
-            0
-          </button>
-          <button type="button" onClick={() => onSum('')}>
-            {T.calcClear}
-          </button>
-        </div>
-      </div>
-      {selectionSize > 0 && sum === '' && (
-        <p className="panel-help">{suggestion ? suggestion.text : T.virtualTypeSum}</p>
-      )}
-      <button
-        type="button"
-        className="primary calc-list"
-        disabled={selectionSize === 0 || value === undefined || value < 1}
-        onClick={() => value !== undefined && onCreate(value)}
-      >
-        {T.virtualCreate(selectionSize)}
-      </button>
-      {cages.length === 0 ? (
-        <p className="panel-help">{T.virtualNone}</p>
-      ) : (
-        <ul className="virtual-list">
-          {cages.map((cage) => (
-            <li key={cage.id} className={cage.hidden ? 'hidden-cage' : ''}>
-              <i className={'virtual-swatch virtual-color-' + virtualColor(cage.id)} />
-              <span>{T.virtualItem(cage.sum, cage.cells.length)}</span>
-              <button type="button" onClick={() => onShow(cage)}>
-                {T.show}
-              </button>
-              <button type="button" onClick={() => onToggleHidden(cage.id)}>
-                {cage.hidden ? T.unhide : T.hide}
-              </button>
-              <button type="button" onClick={() => onRemove(cage.id)}>
-                {T.remove}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </>
-  );
-}
-
 /** Réglage des aides de la partie (section 9), avec le préréglage « Puriste ». */
 export function AidsContent({
   aids,
@@ -374,71 +289,15 @@ export function CalculatorContent({
       </div>
       <div className="calc-pad">
         {CALC_KEYS.flat().map((key) => (
-          <button
+          <PressButton
             key={key}
-            type="button"
-            className={key === '=' ? 'primary calc-equals' : /d/.test(key) ? 'calc-digit' : 'calc-op'}
-            onClick={() => onChange(pressKey(state, key))}
+            className={key === '=' ? 'primary calc-equals' : /^\d$/.test(key) ? 'calc-digit' : 'calc-op'}
+            onPress={() => onChange(pressKey(state, key))}
           >
             {key}
-          </button>
+          </PressButton>
         ))}
       </div>
-    </div>
-  );
-}
-
-/** Bandeau du mode Somme (évolution E4) : total, compte, règle des 45, et création d'une cage virtuelle. */
-export function SumContent({
-  info,
-  zoneName,
-  showRule45,
-  kind,
-  onKind,
-  onCreateVirtual,
-}: {
-  info: SumInfo;
-  zoneName: string | null;
-  showRule45: boolean;
-  kind: 'cages' | 'cases';
-  onKind: (kind: 'cages' | 'cases') => void;
-  onCreateVirtual: () => void;
-}) {
-  return (
-    <div className="sum-panel">
-      <strong className="sum-total">{T.sumTotal(info.total)}</strong>
-      <p className="panel-help">{T.sumCounts(info.cageCount, info.cells.length)}</p>
-      {showRule45 && info.rule45 && zoneName && (
-        <p className="sum-rule45">
-          {T.sumRule45(zoneName, info.rule45.units, info.rule45.outside.length, info.rule45.outsideSum)}
-        </p>
-      )}
-      <div className="chips">
-        <span className="panel-help">{T.sumAdd}</span>
-        <button
-          type="button"
-          className={kind === 'cages' ? 'chip on' : 'chip'}
-          onClick={() => onKind('cages')}
-        >
-          {T.sumAddCages}
-        </button>
-        <button
-          type="button"
-          className={kind === 'cases' ? 'chip on' : 'chip'}
-          onClick={() => onKind('cases')}
-        >
-          {T.sumAddCells}
-        </button>
-      </div>
-      {info.cells.length === 0 && <p className="panel-help">{T.sumHelp}</p>}
-      <button
-        type="button"
-        className="calc-list"
-        disabled={info.cells.length === 0}
-        onClick={onCreateVirtual}
-      >
-        {T.sumCreateVirtual}
-      </button>
     </div>
   );
 }

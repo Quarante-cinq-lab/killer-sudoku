@@ -97,7 +97,7 @@ L'installation sur l'écran d'accueil et le mode hors ligne viendront à l'étap
   adaptés au killer : un chiffre obligatoire d'une cage qui n'y a que deux places forme un lien fort, et deux
   chiffres d'une même cage qu'aucune combinaison ne réunit forment un lien faible (« lien de somme »).
 - Chaque étape est une donnée (technique, cases, chiffres posés ou retirés). `engine/logic/describe.ts`
-  la met en phrase avec les textes de `texts/fr.ts` ; la même donnée servira aux indices.
+  la met en phrase avec les textes de `texts/fr.ts` (utilisé par `npm run trace`).
 - La **notation** (`engine/rating.ts`) additionne les points des étapes et compte les points d'entrée
   (déductions du groupe A possibles au départ). Elle retient le niveau le plus élevé dont les conditions sont
   remplies. Elle vérifie ensuite l'intervalle de score, la forme des cages et l'absence de goulot isolé.
@@ -153,30 +153,29 @@ Pour voir le raisonnement d'une grille de la banque : `npm run trace -- data/ban
 - **Clavier physique** (facultatif) : chiffres, Maj + chiffre pour une note, flèches, Retour arrière pour
   effacer, Cmd + Z pour annuler, Cmd + Maj + Z pour rétablir.
 
-## Outils, aides et indice (étape 5)
+## Outils, aides et indice (étape 5, retours d'essai du 15 novembre 2026)
 
-- **Combinaisons de la cage** : toutes les combinaisons de la cage sélectionnée et de ses cages virtuelles.
+- **Touches** : toutes les touches (pavés, outils, calculatrice) réagissent dès que le doigt se pose, sans
+  attendre qu'il se relève : un appui bref ou un peu glissé n'est plus perdu.
+- **Combinaisons de la cage** : toutes les combinaisons de la cage sélectionnée.
   Un toucher barre ou rétablit une combinaison ; celles qui contredisent les chiffres posés sont grisées.
 - **Combinaisons** (bloc-notes) : « Somme » et « Nombre de cases » se remplissent avec le grand pavé (qui
   change de teinte), « 0 » pour 10, 20…, « C » pour effacer ; chiffres obligatoires ou exclus en option.
-- **Calculatrice** : une vraie calculatrice (+, −, ×, ÷, =, C, ←), avec l'opération en cours et le résultat.
-  Le résultat reste affiché quand on ferme puis rouvre la fenêtre pendant la partie.
-- **Somme** (colonne de gauche, évolution E4) : toucher des cages pour additionner leurs sommes (Σ) ; le
-  bandeau donne aussi la règle des 45 quand une ligne, une colonne, un bloc ou une bande est entièrement
-  couvert (aide désactivable). Interrupteur « cages | cases remplies ». « Créer une cage virtuelle » en un geste.
-- **Cages virtuelles** (refonte E5) : sélectionner des cases puis « Créer ». La somme est proposée quand elle
-  se déduit (cages entières, ou 45 moins des cages entières d'une ligne, colonne ou bloc). Une couleur par
-  cage ; on peut les montrer, les masquer ou les supprimer. Les combinaisons fonctionnent quand leurs cases se
-  voient deux à deux ; les conflits (somme dépassée ou impossible) sont signalés. Une cage virtuelle n'est
-  jamais comparée à la solution : c'est une note.
+- **Calculatrice** : une vraie calculatrice (+, −, ×, ÷, =, C, ←), avec l'opération en cours et le résultat,
+  et de grandes touches (62 px). Le résultat reste affiché quand on ferme puis rouvre la fenêtre.
+- **« + » sur la grille** : quand la sélection contient les cases portant la somme de plusieurs cages, un
+  bouton « + » apparaît dans un coin ; le toucher affiche le total de ces sommes de cages.
+- **« ? » sur la grille** : quand la sélection compte plusieurs cases mais une seule somme de cage, le
+  bouton « ? » ouvre « Combinaisons » rempli avec cette somme et ce nombre de cases.
 - Les fenêtres se déplacent en faisant glisser leur barre de titre.
 - **Aides** (menu « ⋯ » → Aides de la partie) : surlignages, conflits, nettoyage automatique des notes,
   filtrage des combinaisons, notes automatiques, vérification, indice. Préréglage **Puriste**.
 - **Vérifier la grille** (menu « ⋯ ») : marque en rouge les chiffres faux.
-- **Indice** : 1er appui, la technique et la zone ; 2e, l'explication et les cases utilisées (en jaune) ;
-  3e, la déduction est appliquée (annulable). Si la grille contient une erreur, l'indice la signale.
-  Le calcul part des chiffres et des notes du joueur (`engine/hint.ts`).
-- Annuler et Rétablir couvrent aussi les combinaisons barrées, les cages virtuelles et les indices.
+- **Indice** : sélectionner une case puis « Indice » : le bon chiffre s'y inscrit. Trois indices au plus par
+  partie (le bouton affiche ceux qui restent) ; un indice n'est jamais compté comme une erreur.
+- **Annuler** après un chiffre faux : le chiffre disparaît et les notes de la case reviennent, mais l'erreur
+  reste comptée. Annuler et Rétablir couvrent aussi les combinaisons barrées.
+- Les cages virtuelles créées avec une version précédente restent dessinées ; on ne peut plus en créer.
 
 ## Bibliothèque, statistiques et réglages (étape 6)
 

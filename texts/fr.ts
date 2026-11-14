@@ -38,27 +38,15 @@ export const TEXTS = {
     undo: 'Annuler',
     redo: 'Rétablir',
     hint: 'Indice',
+    hintLeft: (n: number) => `Indice (${n})`,
+    hintSelectCell: 'Sélectionne une case, puis touche « Indice ».',
+    hintAlreadyRight: 'Cette case contient déjà le bon chiffre.',
     digits: 'Chiffres',
     notes: 'Notes',
     combinations: 'Comb. de la cage',
     finder: 'Combinaisons',
     calculator: 'Calculatrice',
     options: 'Options',
-    virtualCages: 'Cages virtuelles',
-    sum: 'Somme',
-    sumTitle: 'Somme de cages',
-    sumTotal: (total: number) => `Σ = ${total}`,
-    sumCounts: (cages: number, cells: number) =>
-      `${cages} cage${cages > 1 ? 's' : ''}, ${cells} case${cells > 1 ? 's' : ''}`,
-    sumHelp: 'Touche les cages à additionner ; touche-les à nouveau pour les retirer.',
-    sumAdd: 'Ajouter :',
-    sumAddCages: 'cages',
-    sumAddCells: 'cases remplies',
-    sumRule45: (zone: string, units: number, outside: number, outsideSum: number) =>
-      outside === 0
-        ? `Exactement ${zone} : 45 × ${units} = ${45 * units}.`
-        : `Couvre ${zone} (45 × ${units} = ${45 * units}) : les ${outside} case${outside > 1 ? 's' : ''} en plus font ${outsideSum}.`,
-    sumCreateVirtual: 'Créer une cage virtuelle',
     eraseAll: 'Tout effacer',
     eraseAllConfirm: 'Effacer tous les chiffres et toutes les notes ?',
     eraseSelection: 'Effacer la sélection',
@@ -79,7 +67,6 @@ export const TEXTS = {
       autoCleanNotes: 'Nettoyage automatique des notes',
       filterCombinations: 'Filtrage des combinaisons',
       autoNotes: 'Notes automatiques',
-      sumRule45: 'Règle des 45 en mode Somme',
       check: 'Vérification',
       hint: 'Indice',
     },
@@ -103,23 +90,6 @@ export const TEXTS = {
     calcDigits: 'Chiffres obligatoires ou exclus : touche un chiffre pour changer',
     calcList: 'Lister les combinaisons',
     calcClear: 'C',
-    virtualTitle: 'Cages virtuelles',
-    virtualHelp:
-      'Sélectionne des cases, puis crée la cage. La somme est proposée quand elle se déduit des cages ; sinon, tape-la avec le grand pavé.',
-    virtualTypeSum: 'Tape la somme avec le grand pavé.',
-    virtualSuggestCages: (n: number) =>
-      n === 1
-        ? 'Somme proposée : celle de la cage entière.'
-        : `Somme proposée : celle des ${n} cages entières.`,
-    virtualSuggestUnit: (unit: string, n: number) =>
-      `Somme proposée : 45 moins ${n === 1 ? 'la cage entière' : `les ${n} cages entières`} du reste de la ${unit}.`,
-    hide: 'Masquer',
-    unhide: 'Afficher',
-    virtualCreate: (n: number) => (n <= 1 ? `Créer avec ${n} case` : `Créer avec ${n} cases`),
-    virtualNone: 'Aucune cage virtuelle.',
-    virtualItem: (sum: number, n: number) => `${sum} en ${n} case${n > 1 ? 's' : ''}`,
-    show: 'Montrer',
-    remove: 'Supprimer',
     victoryStats: (hints: number, checks: number, errors: number | null) =>
       [
         `${hints} indice${hints > 1 ? 's' : ''}`,
@@ -287,98 +257,6 @@ export const TEXTS = {
     legal: 'Projet personnel, non destiné à la diffusion. Tous droits réservés.',
     privacy:
       'Aucune donnée ne quitte cet iPad : pas de compte, pas de mesure d’audience, aucun appel réseau.',
-  },
-
-  explanations: {
-    naked_single: 'Il ne reste qu’un seul chiffre possible dans cette case.',
-    hidden_single: 'Dans cette zone, ce chiffre ne peut aller que dans une seule case.',
-    cage_combination:
-      'Avec sa somme et son nombre de cases, cette cage n’admet que certaines combinaisons : les autres chiffres sont impossibles.',
-    rule45_single:
-      'Une ligne, une colonne ou un bloc fait toujours 45. En retirant les cages entièrement à l’intérieur, on obtient la valeur de la case qui dépasse ou qui manque.',
-    pointing:
-      'Dans ce bloc, ce chiffre ne peut être que sur une seule ligne ou colonne : il est exclu du reste de cette ligne ou colonne.',
-    box_line:
-      'Sur cette ligne ou colonne, ce chiffre ne peut être que dans un seul bloc : il est exclu du reste de ce bloc.',
-    cage_unit_overlap:
-      'Un chiffre obligatoire de la cage ne peut se trouver que dans la partie commune avec une ligne, une colonne ou un bloc : il est exclu des autres cases de cette zone (ou l’inverse).',
-    naked_pair:
-      'Deux cases de cette zone n’acceptent que les deux mêmes chiffres : ces chiffres sont exclus des autres cases de la zone.',
-    hidden_pair:
-      'Deux chiffres ne peuvent aller que dans les deux mêmes cases de cette zone : ces cases ne peuvent rien contenir d’autre.',
-    naked_triple:
-      'Trois cases de cette zone se partagent trois chiffres : ces chiffres sont exclus des autres cases de la zone.',
-    hidden_triple:
-      'Trois chiffres ne peuvent aller que dans les trois mêmes cases de cette zone : ces cases ne peuvent rien contenir d’autre.',
-    innies_outies_multi:
-      'Règle des 45 sur plusieurs cases : la somme des cases qui dépassent ou qui manquent est connue, ce qui limite leurs chiffres.',
-    cage_splitting:
-      'La règle des 45 donne la somme d’une partie de la cage : le reste de la cage a donc une somme connue, et moins de combinaisons.',
-    cage_comparison:
-      'La règle des 45 relie les cases qui dépassent et celles qui manquent par une égalité : on compare leurs valeurs possibles.',
-    parity:
-      'Une ligne, une colonne ou un bloc contient toujours cinq chiffres impairs : en comptant les impairs imposés par les cages, on élimine des candidats.',
-    cross_cage_combinations:
-      'Les combinaisons de ces cages d’une même zone doivent être compatibles entre elles : certaines sont impossibles.',
-    naked_quad:
-      'Quatre cases de cette zone se partagent quatre chiffres : ces chiffres sont exclus des autres cases de la zone.',
-    hidden_quad:
-      'Quatre chiffres ne peuvent aller que dans les quatre mêmes cases de cette zone : ces cases ne peuvent rien contenir d’autre.',
-    x_wing:
-      'Sur deux lignes (ou colonnes), ce chiffre n’a que deux places, alignées deux à deux : il est exclu du reste de ces colonnes (ou lignes).',
-    y_wing:
-      'Une case pivot à deux chiffres voit deux « ailes » : quel que soit le chiffre du pivot, l’une des ailes vaut le chiffre commun, qui est donc exclu des cases voyant les deux ailes.',
-    xyz_wing:
-      'Comme un Y-Wing, mais le pivot a trois candidats : le chiffre commun est exclu des cases qui voient le pivot et les deux ailes.',
-    swordfish:
-      'Sur trois lignes (ou colonnes), ce chiffre n’a de place que dans les trois mêmes colonnes (ou lignes) : il est exclu du reste de ces colonnes (ou lignes).',
-    x_cycles:
-      'Pour un même chiffre, une chaîne alterne liens forts (seulement deux places possibles) et liens faibles (deux cases qui se voient) : l’une de ses deux extrémités vaut forcément ce chiffre, qui est exclu des cases voyant les deux.',
-    simple_coloring:
-      'On colorie en deux couleurs les places d’un chiffre reliées par des liens forts : une des deux couleurs est la bonne. Une case qui voit les deux couleurs ne peut pas contenir ce chiffre (ou une couleur se contredit et tombe).',
-    xy_chain:
-      'Une chaîne de cases à deux candidats, reliées par un chiffre commun : si la première ne vaut pas X, la dernière vaut X. Les cases qui voient les deux extrémités ne peuvent donc pas valoir X.',
-    wxyz_wing:
-      'Quatre cases se partagent quatre chiffres : un seul de ces chiffres peut se trouver dans des cases qui ne se voient pas. Il est exclu des cases qui voient toutes ses positions.',
-    jellyfish:
-      'Sur quatre lignes (ou colonnes), ce chiffre n’a de place que dans les quatre mêmes colonnes (ou lignes) : il est exclu du reste de ces colonnes (ou lignes).',
-    aligned_pair_exclusion:
-      'On essaie toutes les paires de chiffres pour deux cases qui se voient : celles qui videraient une case voisine (ou rendraient la cage impossible) sont exclues ; un chiffre qui n’apparaît plus dans aucune paire est retiré.',
-    medusa_3d:
-      'Coloriage en deux couleurs de tous les candidats reliés par des liens forts, entre cases et à l’intérieur des cases : une couleur qui se contredit tombe, et un candidat qui voit les deux couleurs est éliminé.',
-    finned_x_wing:
-      'Presque un X-Wing : quelques places en trop (l’aileron) sont dans un même bloc. Soit l’X-Wing tient, soit l’aileron est vrai : les cases qui voient l’aileron et l’X-Wing perdent le chiffre.',
-    finned_swordfish:
-      'Presque un Swordfish : quelques places en trop (l’aileron) sont dans un même bloc. Soit le Swordfish tient, soit l’aileron est vrai : les cases qui voient l’aileron et le Swordfish perdent le chiffre.',
-    grouped_x_cycles:
-      'Comme un X-Cycle, mais certains maillons sont des groupes de cases alignées dans un bloc : l’une des extrémités vaut le chiffre, exclu des cases qui voient les deux.',
-    als_xz:
-      'Deux groupes de N cases ont chacun N+1 candidats. Un chiffre commun X ne peut être que dans l’un des deux : l’autre groupe se verrouille, et un second chiffre commun Z est exclu des cases qui voient toutes ses positions.',
-    aic: 'Une chaîne alterne liens forts et liens faibles, entre cases et entre chiffres d’une même case : l’une de ses extrémités est forcément vraie, ce qui élimine les candidats qui les contredisent toutes les deux.',
-  },
-
-  hint: {
-    title: (level: number) => `Indice ${level}/3`,
-    zone: (name: string, zone: string) => `${name} : ${zone}`,
-    where: (where: string) => `Cases utilisées : ${where}`,
-    more: 'Expliquer',
-    apply: 'Appliquer',
-    errorTitle: 'Il y a une erreur dans la grille.',
-    errorDetail: (digits: number, notes: number) =>
-      [
-        digits > 0 ? (digits === 1 ? '1 chiffre faux' : `${digits} chiffres faux`) : '',
-        notes > 0
-          ? notes === 1
-            ? '1 case dont les notes ont perdu le bon chiffre'
-            : `${notes} cases dont les notes ont perdu le bon chiffre`
-          : '',
-      ]
-        .filter(Boolean)
-        .join(' et ') + ' (en jaune).',
-    fixErrors: 'Effacer ces erreurs',
-    stuck: 'Aucune déduction simple ne s’applique ici. On peut révéler une case.',
-    reveal: 'Révéler une case',
-    solved: 'La grille est déjà complète.',
   },
 
   rejections: {

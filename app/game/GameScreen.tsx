@@ -3,11 +3,7 @@
  * pause et victoire. La partie est sauvegardée à chaque action.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { DIFFICULTY_CONFIG } from '../../engine/difficulty';
-import { findHint, hintEffect, type Hint } from '../../engine/hint';
-import { createContext } from '../../engine/logic/context';
-import { cellName, describeStep, describeZone } from '../../engine/logic/describe';
-import { cellAt, colOf, rowOf, type PuzzleRecord } from '../../engine/model';
+import { cageAnchor, cellAt, colOf, rowOf, type PuzzleRecord } from '../../engine/model';
 import { TEXTS } from '../../texts/fr';
 import { solutionOf } from '../bank';
 import { Grid, type GridMarks } from '../grid/Grid';
@@ -25,25 +21,20 @@ import {
   wrongCells,
 } from './aids';
 import { emptyCalc, type CalcState } from './calculator';
-import { suggestSum, virtualConflictCells } from './virtual';
-import { emptySelection, sumInfo, toggleInSelection, type SumSelection } from './sumMode';
-import { regionName, unitName } from '../../engine/logic/describe';
+import { virtualConflictCells } from './virtual';
 import { formatTime, now, readClock, startClock, stopClock, stoppedClock, type Clock } from './clock';
 import { Keypad } from './Keypad';
 import {
   AidsContent,
   CalculatorContent,
-  SumContent,
   FinderContent,
   CombinationsContent,
   emptyFinder,
   FloatingPanel,
   typeInFinder,
-  VirtualCagesContent,
   type FinderState,
 } from './panels';
 import {
-  addVirtualCage,
   canRedo,
   canUndo,
   checkVictory,
@@ -58,20 +49,17 @@ import {
   newGame,
   PURIST_AIDS,
   redo,
-  removeVirtualCage,
-  toggleVirtualHidden,
   setAids,
   setDigit,
   toggleCombination,
   toggleNote,
   undo,
-  writeCells,
-  type CellContent,
+  MAX_HINTS,
+  revealCell,
   type GameState,
 } from './state';
 
 const T = TEXTS.game;
-const H = TEXTS.hint;
 const EMPTY: ReadonlySet<number> = new Set();
 
 interface Props {
@@ -111,48 +99,7 @@ interface Confirmation {
 }
 
 /** Où va le pavé chiffres : dans la grille, ou dans le champ d'une fenêtre ouverte. */
-type DigitTarget = 'grid' | 'finder' | 'virtual';
-
-/** Contenu de l'indice selon son niveau de détail. */
-function HintContent({
-  hint,
-  level,
-  describe,
-}: {
-  hint: Hint;
-  level: 1 | 2;
-  describe: (step: Extract<Hint, { kind: 'step' }>['step']) => {
-    name: string;
-    where: string;
-    zone: string;
-    cells: string;
-  };
-}) {
-  if (hint.kind === 'solved') return <p>{H.solved}</p>;
-  if (hint.kind === 'stuck') return <p>{H.stuck}</p>;
-  if (hint.kind === 'error') {
-    return (
-      <>
-        <p className="hint-main">{H.errorTitle}</p>
-        {level === 2 && <p>{H.errorDetail(hint.wrongDigits.length, hint.missingNotes.length)}</p>}
-      </>
-    );
-  }
-  const text = describe(hint.step);
-  return (
-    <>
-      <p className="hint-main">{H.zone(text.name, text.zone)}</p>
-      {level === 2 && (
-        <>
-          <p>{TEXTS.explanations[hint.step.technique]}</p>
-          <p className="panel-help">
-            {H.where(text.where.includes(text.cells) ? text.where : `${text.cells} (${text.where})`)}
-          </p>
-        </>
-      )}
-    </>
-  );
-}
+type DigitTarget = 'grid' | 'finder';
 
 function Modal({ children, onClose }: { children: ReactNode; onClose?: () => void }) {
   return (
@@ -174,23 +121,16 @@ export function GameScreen(props: Props) {
   const [aidsOpen, setAidsOpen] = useState(false);
   const [combosOpen, setCombosOpen] = useState(false);
   const [finderOpen, setFinderOpen] = useState(false);
-  const [virtualOpen, setVirtualOpen] = useState(false);
   const [target, setTarget] = useState<DigitTarget>('grid');
   const [finder, setFinder] = useState<FinderState>(emptyFinder);
   // Calculatrice : son état reste tant que la partie est ouverte, même si on ferme sa fenêtre.
   const [calcOpen, setCalcOpen] = useState(false);
   const [calcState, setCalcState] = useState<CalcState>(emptyCalc);
-  // Mode Somme (E4) : sélection de cages entières, effacée à la sortie du mode.
-  const [sumMode, setSumMode] = useState(false);
-  const [sumSel, setSumSel] = useState<SumSelection>(emptySelection);
-  const [sumKind, setSumKind] = useState<'cages' | 'cases'>('cages');
-  const [virtualSum, setVirtualSum] = useState('');
   /** Résultat de la dernière vérification : case → chiffre jugé faux (la marque disparaît si on le change). */
   const [checked, setChecked] = useState<ReadonlyMap<number, number>>(new Map());
-  /** Indice en cours et niveau de détail affiché (1 : technique et zone ; 2 : explication). */
-  const [hint, setHint] = useState<{ result: Hint; level: 1 | 2 } | null>(null);
-  const ctx = useMemo(() => createContext(record, DIFFICULTY_CONFIG.rule45MaxCells), [record]);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  /** Somme rapide « + » : sélection pour laquelle le total est affiché (il disparaît si elle change). */
+  const [quickSumFor, setQuickSumFor] = useState<string | null>(null);
   /** Ligne d'historique de la partie gagnée (pour y ajouter le ressenti). */
   const [finished, setFinished] = useState<HistoryEntry | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -209,16 +149,12 @@ export function GameScreen(props: Props) {
     });
   }, []);
 
-  /**
-   * Applique une action du joueur, vérifie la victoire et sauvegarde. Toute action sur la grille
-   * périme l'indice affiché (sauf les compteurs : `keepHint`).
-   */
+  /** Applique une action du joueur, vérifie la victoire et sauvegarde. */
   const update = useCallback(
-    (action: (state: GameState) => GameState, keepHint = false) => {
+    (action: (state: GameState) => GameState) => {
       const current = gameRef.current;
       const changed = action(current);
       if (changed === current) return;
-      if (!keepHint) setHint(null);
       const next = { ...current, ...checkVictory(changed, solution) };
       if (next.completed) {
         clock.current = stopClock(clock.current, now());
@@ -316,19 +252,13 @@ export function GameScreen(props: Props) {
 
   const blocked = paused || isOver(game);
   const aids = game.aids;
-  const digitTarget: DigitTarget =
-    target === 'finder' && finderOpen ? 'finder' : target === 'virtual' && virtualOpen ? 'virtual' : 'grid';
+  const digitTarget: DigitTarget = target === 'finder' && finderOpen ? 'finder' : 'grid';
 
   /** Grand pavé : chiffre dans la grille, ou dans le champ de la fenêtre active. */
   const onDigit = (d: number) => {
     if (blocked) return;
     if (digitTarget === 'finder') setFinder((c) => typeInFinder(c, d));
-    else if (digitTarget === 'virtual') {
-      setVirtualSum((v) => {
-        const next = (v === '0' ? '' : v) + String(d);
-        return Number(next) <= 405 ? next : v;
-      });
-    } else update((s) => setDigit(s, record, selection, d, solution));
+    else update((s) => setDigit(s, record, selection, d, solution));
   };
   const onNote = (d: number) => !blocked && update((s) => toggleNote(s, selection, d));
 
@@ -368,38 +298,64 @@ export function GameScreen(props: Props) {
   const runCheck = () => {
     setMenuOpen(false);
     const wrong = wrongCells(game.values, solution);
-    update((s) => ({ ...s, checks: s.checks + 1 }), true);
+    update((s) => ({ ...s, checks: s.checks + 1 }));
     setChecked(new Map(wrong.map((c) => [c, game.values[c]])));
     setToast(wrong.length > 0 ? T.checkFound(wrong.length) : T.checkNone);
   };
 
-  /** Bouton Indice : 1er appui, la technique et la zone ; 2e, l'explication ; 3e, la déduction appliquée. */
+  /** Indice (section 9) : le bon chiffre de la case sélectionnée, 3 fois au plus par partie. */
   const onHint = () => {
     if (blocked || !aids.hint) return;
-    if (!hint) {
-      const result = findHint(ctx, solution, game.values, game.notes);
-      if (result.kind !== 'solved') update((s) => ({ ...s, hints: s.hints + 1 }), true);
-      setHint({ result, level: 1 });
-    } else if (hint.level === 1 && (hint.result.kind === 'step' || hint.result.kind === 'error')) {
-      setHint({ ...hint, level: 2 });
-    } else applyHint(hint.result);
+    if (focus === null) {
+      setToast(T.hintSelectCell);
+      return;
+    }
+    if (game.values[focus] === solution[focus]) {
+      setToast(T.hintAlreadyRight);
+      return;
+    }
+    update((s) => revealCell(s, record, solution, focus));
   };
 
-  /** 3e niveau : applique la déduction, efface les erreurs ou révèle une case (une seule action annulable). */
-  const applyHint = (result: Hint) => {
-    const contents = new Map<number, CellContent>();
-    if (result.kind === 'step') {
-      for (const [cell, content] of hintEffect(result, game.values, game.notes)) contents.set(cell, content);
-    } else if (result.kind === 'error') {
-      for (const cell of [...result.wrongDigits, ...result.missingNotes])
-        contents.set(cell, { value: 0, notes: [] });
-    } else if (result.kind === 'stuck') {
-      const cell = focus !== null && !game.values[focus] ? focus : game.values.findIndex((v) => !v);
-      if (cell >= 0) contents.set(cell, { value: solution[cell], notes: [] });
-    }
-    setHint(null);
-    update((s) => writeCells(s, record, contents));
-  };
+  /**
+   * Somme et combinaisons rapides (section 7.4) : avec plusieurs cases sélectionnées, « + » si elles portent
+   * plusieurs sommes de cages (le toucher affiche leur total), « ? » si elles n'en portent qu'une (le
+   * toucher ouvre les combinaisons de cette somme pour ce nombre de cases).
+   */
+  const anchors = selection.filter((cell) => record.cages.some((c) => cageAnchor(c) === cell));
+  const selectionKey = selection.join(',');
+  const quickBadge =
+    blocked || selection.length < 2 || anchors.length === 0 || focus === null
+      ? undefined
+      : anchors.length >= 2
+        ? {
+            cell: focus,
+            text:
+              quickSumFor === selectionKey
+                ? String(
+                    anchors.reduce(
+                      (s, a) => s + (record.cages.find((c) => cageAnchor(c) === a)?.sum ?? 0),
+                      0,
+                    ),
+                  )
+                : '+',
+            onPress: () => setQuickSumFor(selectionKey),
+          }
+        : {
+            cell: focus,
+            text: '?',
+            onPress: () => {
+              const sum = record.cages.find((c) => cageAnchor(c) === anchors[0])?.sum ?? 0;
+              setFinder({
+                ...emptyFinder(),
+                sum: String(sum),
+                count: String(selection.length),
+                listed: true,
+              });
+              setFinderOpen(true);
+              setTarget('finder');
+            },
+          };
 
   // Marques des aides, recalculées seulement quand la grille ou la sélection change.
   const marks: GridMarks = useMemo(() => {
@@ -422,30 +378,9 @@ export function GameScreen(props: Props) {
         : aids.check
           ? new Set([...checked].filter(([c, v]) => game.values[c] === v).map(([c]) => c))
           : EMPTY,
-      hint:
-        !hint || hint.level < 2
-          ? EMPTY
-          : hint.result.kind === 'step'
-            ? new Set(hint.result.step.cells)
-            : hint.result.kind === 'error'
-              ? new Set([...hint.result.wrongDigits, ...hint.result.missingNotes])
-              : EMPTY,
       virtualCages: game.virtualCages,
-      sum: sumMode ? new Set(sumInfo(record, game.values, sumSel).cells) : EMPTY,
     };
-  }, [
-    aids,
-    checked,
-    focus,
-    game.errorMode,
-    game.values,
-    game.virtualCages,
-    hint,
-    record,
-    solution,
-    sumMode,
-    sumSel,
-  ]);
+  }, [aids, checked, focus, game.errorMode, game.values, game.virtualCages, record, solution]);
 
   const ask = (message: string, onConfirm: () => void) => setConfirmation({ message, onConfirm });
   const title = T.title(TEXTS.levels[record.level], record.number);
@@ -497,12 +432,8 @@ export function GameScreen(props: Props) {
           focus={focus}
           hidden={paused}
           notesLayout={props.notesLayout}
+          badge={quickBadge}
           onSelect={(cells, f) => {
-            if (sumMode) {
-              // Mode Somme : un toucher ajoute ou retire une cage (ou une case remplie) ; pas de glissé.
-              if (cells.length === 1) setSumSel((s) => toggleInSelection(record, game.values, s, f, sumKind));
-              return;
-            }
             setSelection(cells);
             setFocus(f);
           }}
@@ -530,60 +461,19 @@ export function GameScreen(props: Props) {
         onOptions={() => setOptionsOpen(true)}
         onHint={onHint}
         hintEnabled={aids.hint}
+        hintsLeft={Math.max(0, MAX_HINTS - game.hints)}
         onCombinations={() => setCombosOpen((o) => !o)}
         onCalculator={() => setCalcOpen((o) => !o)}
-        onSum={() => {
-          setSumMode((on) => !on);
-          setSumSel(emptySelection());
-        }}
-        padsDisabled={sumMode}
         onFinder={() => {
           setFinderOpen((o) => !o);
           setTarget('finder');
-        }}
-        onVirtualCages={() => {
-          setVirtualOpen((o) => !o);
-          setTarget('virtual');
         }}
         open={{
           combinations: combosOpen,
           finder: finderOpen,
           calculator: calcOpen,
-          virtualCages: virtualOpen,
-          sum: sumMode,
         }}
       />
-
-      {!blocked && hint && (
-        <FloatingPanel
-          title={H.title(hint.result.kind === 'step' || hint.result.kind === 'error' ? hint.level : 1)}
-          start={{ x: 16, y: 70 }}
-          onClose={() => setHint(null)}
-        >
-          <HintContent
-            hint={hint.result}
-            level={hint.level}
-            describe={(step) => ({
-              ...describeStep(step, ctx),
-              zone: describeZone(step, ctx),
-              cells: step.cells.map(cellName).join(', '),
-            })}
-          />
-          <div className="modal-actions">
-            {hint.result.kind !== 'solved' && (
-              <button type="button" className="primary" onClick={onHint}>
-                {hint.result.kind === 'stuck'
-                  ? H.reveal
-                  : hint.level === 1
-                    ? H.more
-                    : hint.result.kind === 'error'
-                      ? H.fixErrors
-                      : H.apply}
-              </button>
-            )}
-          </div>
-        </FloatingPanel>
-      )}
 
       {!blocked && combosOpen && (
         <FloatingPanel
@@ -602,40 +492,10 @@ export function GameScreen(props: Props) {
         </FloatingPanel>
       )}
 
-      {!blocked && sumMode && (
-        <FloatingPanel
-          title={T.sumTitle}
-          start={{ x: 16, y: Math.max(70, window.innerHeight - 520) }}
-          onClose={() => {
-            setSumMode(false);
-            setSumSel(emptySelection());
-          }}
-          compact
-        >
-          {(() => {
-            const info = sumInfo(record, game.values, sumSel);
-            return (
-              <SumContent
-                info={info}
-                zoneName={info.rule45 ? regionName(info.rule45.region) : null}
-                showRule45={aids.sumRule45}
-                kind={sumKind}
-                onKind={setSumKind}
-                onCreateVirtual={() => {
-                  update((s) => addVirtualCage(s, info.cells, info.total));
-                  setSumMode(false);
-                  setSumSel(emptySelection());
-                }}
-              />
-            );
-          })()}
-        </FloatingPanel>
-      )}
-
       {!blocked && calcOpen && (
         <FloatingPanel
           title={T.calculatorTitle}
-          start={{ x: panelX('right') + 70, y: 70 }}
+          start={{ x: Math.max(16, panelX('right') - 10), y: 70 }}
           onClose={() => setCalcOpen(false)}
           compact
         >
@@ -656,45 +516,6 @@ export function GameScreen(props: Props) {
               setFinder(c);
               setTarget('finder');
             }}
-          />
-        </FloatingPanel>
-      )}
-
-      {!blocked && virtualOpen && (
-        <FloatingPanel
-          title={T.virtualTitle}
-          start={{ x: panelX('left'), y: 320 }}
-          onClose={() => setVirtualOpen(false)}
-        >
-          <VirtualCagesContent
-            cages={game.virtualCages}
-            selectionSize={selection.length}
-            suggestion={(() => {
-              const s = suggestSum(record, selection);
-              if (!s) return null;
-              return {
-                sum: s.sum,
-                text:
-                  s.reason === 'cages'
-                    ? T.virtualSuggestCages(s.cages)
-                    : T.virtualSuggestUnit(unitName(s.unit), s.cages),
-              };
-            })()}
-            sum={virtualSum}
-            onSum={(sum) => {
-              setVirtualSum(sum);
-              setTarget('virtual');
-            }}
-            onCreate={(sum) => {
-              update((s) => addVirtualCage(s, selection, sum));
-              setVirtualSum('');
-            }}
-            onShow={(cage) => {
-              setSelection(cage.cells);
-              setFocus(cage.cells[0]);
-            }}
-            onToggleHidden={(id) => update((s) => toggleVirtualHidden(s, id))}
-            onRemove={(id) => update((s) => removeVirtualCage(s, id))}
           />
         </FloatingPanel>
       )}

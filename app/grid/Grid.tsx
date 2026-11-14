@@ -23,10 +23,6 @@ export interface GridMarks {
   conflicts: ReadonlySet<number>;
   /** Chiffres faux trouvés par la vérification. */
   wrong: ReadonlySet<number>;
-  /** Cases utilisées par l'indice en cours. */
-  hint: ReadonlySet<number>;
-  /** Cases sélectionnées en mode Somme. */
-  sum: ReadonlySet<number>;
   virtualCages: readonly { id: number; sum: number; cells: readonly number[]; hidden?: boolean }[];
 }
 
@@ -45,6 +41,29 @@ interface Props {
   /** Notes en ligne (ordre de saisie) ou en grille 3 × 3 (réglage, section 7.2). */
   notesLayout?: 'inline' | 'grid';
   onSelect: (cells: number[], focus: number) => void;
+  /** Petit bouton posé sur la grille (« + » ou « ? », section 7.4), au coin d'une case. */
+  badge?: { cell: number; text: string; onPress: () => void } | undefined;
+}
+
+/** Bouton rapide en haut à droite d'une case : il ne change pas la sélection quand on le touche. */
+function Badge({ cell, text, onPress }: { cell: number; text: string; onPress: () => void }) {
+  const width = Math.max(40, text.length * 17 + 16);
+  const x = (colOf(cell) + 1) * CELL - width - 4;
+  const y = rowOf(cell) * CELL + 4;
+  return (
+    <g
+      className="grid-badge"
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        onPress();
+      }}
+    >
+      <rect x={x} y={y} width={width} height={40} rx={8} />
+      <text x={x + width / 2} y={y + 29} fontSize={28} textAnchor="middle">
+        {text}
+      </text>
+    </g>
+  );
 }
 
 /** Partie fixe de la grille (traits, cages, sommes) : calculée une seule fois par grille. */
@@ -208,6 +227,7 @@ export function Grid({
   hidden,
   notesLayout,
   onSelect,
+  badge,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const drag = useRef<number[] | null>(null);
@@ -265,8 +285,6 @@ export function Grid({
             <CellRects cells={puzzle.cages[focusCage].cells} className="cage-highlight" prefix="c" />
           )}
           <CellRects cells={marks.sameDigit} className="same-digit" prefix="d" />
-          <CellRects cells={marks.hint} className="hint-highlight" prefix="h" />
-          <CellRects cells={marks.sum} className="sum-fill" prefix="m" />
           <CellRects cells={selection} className="selected-fill" prefix="s" />
           <CellRects cells={marks.conflicts} className="conflict-fill" prefix="x" />
           <CellRects cells={marks.wrong} className="wrong-fill" prefix="w" />
@@ -309,6 +327,7 @@ export function Grid({
             )
           ) : null,
         )}
+      {!hidden && badge && <Badge {...badge} />}
     </svg>
   );
 }

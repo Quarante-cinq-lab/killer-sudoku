@@ -11,6 +11,8 @@ import {
   eraseCells,
   isOver,
   MAX_ERRORS,
+  MAX_HINTS,
+  revealCell,
   migrateGame,
   newGame,
   redo,
@@ -150,5 +152,39 @@ describe('historique, statistiques et bibliothèque', () => {
   it('une grille dont la dernière partie est perdue a le statut « perdue »', () => {
     const lost = { puzzleId: record.id, completed: false, lost: true, elapsedMs: 1000, updatedAt: 1 };
     expect(libraryItems([record], [lost], [entry('perdue', 3)], new Set())[0].status).toBe('perdue');
+  });
+});
+
+describe('indice : chiffre de la case sélectionnée (retours du 15 novembre 2026)', () => {
+  it('inscrit le bon chiffre, remplace un chiffre faux, et ne compte jamais une erreur', () => {
+    let s = put(fresh(), [1], wrong(1));
+    expect(s.errors).toBe(1);
+    s = revealCell(s, record, solution, 1);
+    expect(s.values[1]).toBe(solution[1]);
+    expect(s.errors).toBe(1);
+    expect(s.hints).toBe(1);
+  });
+
+  it('au plus 3 indices par partie ; une case déjà juste ne consomme rien', () => {
+    let s = put(fresh(), [0], solution[0]);
+    expect(revealCell(s, record, solution, 0)).toBe(s);
+    for (const cell of [1, 2, 3]) s = revealCell(s, record, solution, cell);
+    expect(s.hints).toBe(MAX_HINTS);
+    expect(revealCell(s, record, solution, 4)).toBe(s);
+  });
+
+  it('« Annuler » retire le chiffre révélé mais ne rend pas l’indice', () => {
+    const s = undo(revealCell(fresh(), record, solution, 5));
+    expect(s.values[5]).toBe(0);
+    expect(s.hints).toBe(1);
+  });
+
+  it('annuler un chiffre faux fait revenir les notes de la case et des voisines ; l’erreur reste', () => {
+    let s = toggleNote(fresh(), [0], wrong(0));
+    s = toggleNote(s, [1, 9], wrong(0));
+    const notes = s.notes.map((n) => [...n]);
+    s = undo(put(s, [0], wrong(0)));
+    expect(s.notes).toEqual(notes);
+    expect(s.errors).toBe(1);
   });
 });

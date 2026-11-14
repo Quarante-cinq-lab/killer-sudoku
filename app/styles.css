@@ -175,8 +175,9 @@ button {
   transition: transform 60ms ease;
 }
 
+/* Appui : la touche fonce sans changer de taille (un rétrécissement faisait perdre des appuis). */
 button:active:not(:disabled) {
-  transform: scale(0.96);
+  filter: brightness(0.88);
 }
 
 button:disabled {
@@ -400,10 +401,6 @@ button.secondary {
 
 .same-digit {
   fill: var(--same-digit);
-}
-
-.hint-highlight {
-  fill: var(--hint);
 }
 
 /* Chiffre faux (mode erreurs ou vérification) : rouge. Conflit (doublon, somme impossible) : orangé. */
@@ -913,12 +910,6 @@ button.secondary {
   accent-color: var(--accent);
 }
 
-.hint-main {
-  font-size: 18px;
-  font-weight: 600;
-  margin: 4px 0 8px;
-}
-
 /* ---------- Fin de partie : ressenti ---------- */
 
 .feelings {
@@ -1286,7 +1277,7 @@ button.secondary {
 /* ---------- Calculatrice (E3) ---------- */
 
 .floating.compact {
-  width: 250px;
+  width: 330px;
 }
 
 .calc-screen {
@@ -1309,7 +1300,7 @@ button.secondary {
 }
 
 .calc-value {
-  font-size: 30px;
+  font-size: 36px;
   white-space: nowrap;
 }
 
@@ -1320,8 +1311,8 @@ button.secondary {
 }
 
 .calc-pad button {
-  min-height: 46px;
-  font-size: 20px;
+  min-height: 62px;
+  font-size: 26px;
 }
 
 .calc-pad .calc-op {
@@ -1337,25 +1328,18 @@ button.secondary {
   grid-column: span 3;
 }
 
-/* ---------- Mode Somme (E4) ---------- */
+/* ---------- « + » et « ? » sur la grille (retours d'essai du 15 novembre 2026) ---------- */
 
-.sum-fill {
-  fill: var(--sum-fill);
+.grid-badge {
+  cursor: pointer;
 }
 
-.sum-total {
-  display: block;
-  font-size: 30px;
-  font-variant-numeric: tabular-nums;
+.grid-badge rect {
+  fill: var(--accent);
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 25%));
 }
 
-.sum-rule45 {
-  font-size: 15px;
-  line-height: 1.35;
-  margin: 6px 0 10px;
-}
-
-.sum-panel .chips {
-  align-items: center;
-  margin-top: 8px;
+.grid-badge text {
+  fill: var(--accent-fg);
+  font-weight: 700;
 }
