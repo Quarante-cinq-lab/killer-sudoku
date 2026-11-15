@@ -155,13 +155,18 @@ Les grilles très difficiles sont rares quand on génère au hasard. Le script d
 }
 ```
 
-Les cases sont numérotées de 0 à 80, ligne par ligne. L'identifiant d'une grille ne change jamais.
+Les cases sont numérotées de 0 à 80, ligne par ligne. L'identifiant d'une grille livrée avec l'application ne change jamais. Seule exception, pour une grille importée : voir la section 6.4.
 
 ### 6.4 Commandes et ajout de grilles
 
 - `npm run generate -- --level EXPERT --count 100` : génère des grilles, affiche la progression et un rapport (nombre obtenu par niveau, temps moyen par grille).
 - Les nouvelles grilles sont ajoutées à la banque. Une grille déjà présente n'est jamais écrasée.
-- Dans l'application, le menu Réglages permet d'importer un fichier de banque complémentaire, sans perte d'historique.
+- Dans l'application, le menu Réglages permet d'importer un fichier de banque complémentaire, sans perte d'historique. Chaque grille du fichier est vérifiée :
+  - une grille identique à une grille déjà connue (à une rotation ou une symétrie près) est écartée : rien n'est jamais remplacé ;
+  - une grille qui a plusieurs solutions est refusée, car le mode erreurs compterait comme faux un chiffre juste pour une autre solution ;
+  - une grille nouvelle dont le numéro est déjà pris reçoit un identifiant libre : le préfixe « IMP- » devant l'identifiant d'origine (« IMP-HRD-0051 »), puis « IMP-2- », « IMP-3- »… si celui-ci est pris aussi ;
+  - le message de fin d'import indique combien de grilles ont été ajoutées, écartées et refusées.
+- Si une mise à jour de l'application livre une grille sous un identifiant déjà utilisé par une grille importée différente, la grille importée change d'identifiant au démarrage, selon la même règle. Sa partie en cours, son historique et son statut de favori la suivent ; la grille livrée garde son identifiant. *(Règle ajoutée après la relecture du code du 15 novembre 2026.)*
 - Option V1.1 : génération directement sur l'iPad, dans un Web Worker, pour les niveaux HARD et EXPERT uniquement (bouton « Générer une grille »). Prévoir d'abord une mesure du temps de génération réel sur l'iPad.
 
 ## 7. Écran de jeu
