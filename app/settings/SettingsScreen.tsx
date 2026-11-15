@@ -208,7 +208,10 @@ export function SettingsScreen(props: Props) {
               if (text === null) return;
               props
                 .onImportBank(text)
-                .then(({ added, skipped, rejected }) => setMessage(S.bankDone(added, skipped, rejected)), fail);
+                .then(
+                  ({ added, skipped, rejected }) => setMessage(S.bankDone(added, skipped, rejected)),
+                  fail,
+                );
             }}
           />
         </Section>

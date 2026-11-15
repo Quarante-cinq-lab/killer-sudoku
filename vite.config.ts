@@ -8,7 +8,7 @@ import pkg from './package.json' with { type: 'json' };
  * fichiers et se connecter qu'à sa propre adresse. Ajoutée seulement à la version construite, car le
  * serveur de développement a besoin de scripts « en ligne » pour recharger la page à chaque modification.
  */
-const CSP = [
+export const CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self'",
@@ -22,7 +22,7 @@ const CSP = [
   "form-action 'none'",
 ].join('; ');
 
-const contentSecurityPolicy = (): Plugin => ({
+export const contentSecurityPolicy = (): Plugin => ({
   name: 'content-security-policy',
   apply: 'build',
   transformIndexHtml: (html) =>

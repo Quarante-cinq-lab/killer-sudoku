@@ -11,7 +11,14 @@ import { BANKS, findPuzzle, readExtraBank, registerExtraPuzzles } from './bank';
 import { applyAppearance, saveFile } from './data/appearance';
 import { backupFileName, buildBackup, parseBackup } from './data/backup';
 import { restoreExtraPuzzles } from './extras';
-import { libraryItems, type HistoryEntry, type LibraryItem } from './data/history';
+import {
+  historyEntry,
+  libraryItems,
+  today,
+  wasStarted,
+  type HistoryEntry,
+  type LibraryItem,
+} from './data/history';
 import { DEFAULT_SETTINGS, type Settings } from './data/settings';
 import { formatTime } from './game/clock';
 import { GameScreen } from './game/GameScreen';
@@ -47,8 +54,6 @@ type Screen =
   | { kind: 'stats' }
   | { kind: 'settings' }
   | { kind: 'game'; game: SavedGame; key: number };
-
-const today = (): string => new Date().toLocaleDateString('sv-SE');
 
 /** Identifiant d'affichage : un nouvel écran de jeu repart de zéro à chaque ouverture. */
 let screenCounter = 0;
@@ -153,19 +158,8 @@ export function App() {
    */
   const restart = async (item: LibraryItem) => {
     const game = data.games.find((g) => g.puzzleId === item.record.id && !g.completed && !g.lost);
-    if (game && (game.undo.length > 0 || game.elapsedMs > 60_000)) {
-      await addHistory({
-        puzzleId: game.puzzleId,
-        level: game.level,
-        startedAt: game.startedAt,
-        endedAt: today(),
-        outcome: 'abandonnee',
-        durationMs: game.elapsedMs,
-        hints: game.hints,
-        checks: game.checks,
-        errors: game.errors,
-        feeling: null,
-      });
+    if (game && wasStarted(game, game.elapsedMs)) {
+      await addHistory(historyEntry(game, 'abandonnee', game.elapsedMs));
     }
     await startFresh(item.record.id, item.record.level);
   };

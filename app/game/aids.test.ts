@@ -2,7 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { parseBank } from '../../engine/bank';
 import { parseSolution } from '../../engine/model';
 import hardBank from '../../data/bank-hard.json';
-import { allDistinct, finderLines, conflictCells, contradicts, unitCells, wrongCells } from './aids';
+import {
+  allDistinct,
+  finderLines,
+  conflictCells,
+  contradicts,
+  quickAction,
+  unitCells,
+  wrongCells,
+} from './aids';
 import {
   GAME_FORMAT,
   DEFAULT_AIDS,
@@ -76,6 +84,46 @@ describe('vérification et surlignage', () => {
     const cells = unitCells(40);
     expect(cells.size).toBe(21);
     expect(cells.has(36) && cells.has(4) && cells.has(30)).toBe(true);
+  });
+});
+
+describe('somme et combinaisons rapides (« + » et « ? »)', () => {
+  const [a, b] = record.cages;
+  const anchorA = Math.min(...a.cells);
+  const anchorB = Math.min(...b.cells);
+  const anchors = new Set(record.cages.map((c) => Math.min(...c.cells)));
+  const plain = Array.from({ length: 81 }, (_, i) => i).filter((c) => !anchors.has(c));
+
+  it('« + » : plusieurs cases portant une somme de cage donnent le total de ces sommes', () => {
+    expect(quickAction(record, [anchorA, plain[0], anchorB], anchorB)).toEqual({
+      kind: 'sum',
+      total: a.sum + b.sum,
+    });
+  });
+
+  it('« ? » : plusieurs cases mais une seule somme, sur cette somme et les cases sélectionnées', () => {
+    const selection = [anchorA, plain[0], plain[1]];
+    expect(quickAction(record, selection, plain[1])).toEqual({
+      kind: 'combinations',
+      sum: a.sum,
+      cells: selection,
+    });
+  });
+
+  it('« ? » : une seule case ouvre les combinaisons de toute sa cage', () => {
+    const cell = plain[0];
+    const cage = record.cages.find((c) => c.cells.includes(cell));
+    expect(quickAction(record, [cell], cell)).toEqual({
+      kind: 'combinations',
+      sum: cage?.sum,
+      cells: cage?.cells,
+    });
+  });
+
+  it('rien sans somme de cage dans une sélection de plusieurs cases, ni sans case active', () => {
+    expect(quickAction(record, [plain[0], plain[1]], plain[1])).toBeNull();
+    expect(quickAction(record, [anchorA, anchorB], null)).toBeNull();
+    expect(quickAction(record, [], null)).toBeNull();
   });
 });
 

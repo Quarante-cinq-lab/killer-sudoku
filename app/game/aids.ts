@@ -4,7 +4,16 @@
  */
 import { digitBit, digitsOf } from '../../engine/bits';
 import { combinationsFor, combinationsWith } from '../../engine/combinations';
-import { boxOf, cageIndexByCell, colOf, PEERS, rowOf, UNITS, type Puzzle } from '../../engine/model';
+import {
+  boxOf,
+  cageAnchor,
+  cageIndexByCell,
+  colOf,
+  PEERS,
+  rowOf,
+  UNITS,
+  type Puzzle,
+} from '../../engine/model';
 
 /**
  * Cases en conflit : un même chiffre deux fois dans une ligne, une colonne, un bloc ou une cage, ou une
@@ -76,4 +85,40 @@ export function contradicts(
 export function finderLines(sum: number, count: number, required: number, excluded: number): number[][] {
   if (count < 1 || count > 9) return [];
   return combinationsWith(count, sum, required, excluded).map(digitsOf);
+}
+
+/** Bouton rapide affiché sur la grille à côté de la sélection (section 7.4). */
+export type QuickAction =
+  /** « + » : total des sommes des cages dont la sélection contient la case de la somme. */
+  | { kind: 'sum'; total: number }
+  /** « ? » : ouvre « Combinaisons » sur cette somme et ces cases. */
+  | { kind: 'combinations'; sum: number; cells: readonly number[] };
+
+/**
+ * Somme et combinaisons rapides (section 7.4) :
+ * - plusieurs cases portant la somme d'une cage : « + », dont le toucher affiche le total de ces sommes ;
+ * - plusieurs cases, mais une seule somme de cage : « ? » sur cette somme et ces cases ;
+ * - une seule case : « ? » sur toute sa cage.
+ * Rien sans case active (`focus`), ni dans les autres cas.
+ */
+export function quickAction(
+  puzzle: Puzzle,
+  selection: readonly number[],
+  focus: number | null,
+): QuickAction | null {
+  if (focus === null || selection.length === 0) return null;
+  const sums = selection.flatMap((cell) =>
+    puzzle.cages.filter((c) => cageAnchor(c) === cell).map((c) => c.sum),
+  );
+  if (selection.length >= 2 && sums.length >= 2) {
+    return { kind: 'sum', total: sums.reduce((a, b) => a + b, 0) };
+  }
+  if (selection.length >= 2 && sums.length === 1) {
+    return { kind: 'combinations', sum: sums[0], cells: selection };
+  }
+  if (selection.length === 1) {
+    const cage = puzzle.cages.find((c) => c.cells.includes(focus));
+    if (cage) return { kind: 'combinations', sum: cage.sum, cells: cage.cells };
+  }
+  return null;
 }

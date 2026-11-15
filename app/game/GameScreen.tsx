@@ -2,22 +2,22 @@
  * Écran de jeu (section 7) : barre supérieure, grille, double clavier, outils killer, aides, menus,
  * pause et victoire. La partie est sauvegardée à chaque action.
  */
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { cageAnchor, cellAt, colOf, rowOf, type PuzzleRecord } from '../../engine/model';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { cellAt, colOf, rowOf, type PuzzleRecord } from '../../engine/model';
 import { TEXTS } from '../../texts/fr';
 import { solutionOf } from '../bank';
 import { Grid, type GridMarks } from '../grid/Grid';
 import { Icon } from '../icons';
-import type { Feeling, HistoryEntry } from '../data/history';
+import { historyEntry, today, wasStarted, type HistoryEntry } from '../data/history';
 import type { NotesLayout } from '../data/settings';
 import { addHistory, saveGame, updateHistory, type SavedGame } from '../storage';
-import { contradicts, finderLines, conflictCells, unitCells, wrongCells } from './aids';
+import { contradicts, finderLines, conflictCells, quickAction, unitCells, wrongCells } from './aids';
 import { emptyCalc, pressKey, type CalcKey, type CalcState } from './calculator';
 import { virtualConflictCells } from './virtual';
 import { formatTime, now, readClock, startClock, stopClock, stoppedClock, type Clock } from './clock';
+import { AidsDialog, ConfirmDialog, LostDialog, MenuDialog, OptionsDialog, VictoryDialog } from './dialogs';
 import { Keypad } from './Keypad';
 import {
-  AidsContent,
   CalculatorContent,
   FinderContent,
   emptyFinder,
@@ -29,7 +29,6 @@ import {
   canRedo,
   canUndo,
   checkVictory,
-  DEFAULT_AIDS,
   eraseAll,
   eraseCells,
   fillAllNotes,
@@ -38,7 +37,6 @@ import {
   MAX_ERRORS,
   wrongDigits,
   newGame,
-  PURIST_AIDS,
   redo,
   setAids,
   setDigit,
@@ -65,24 +63,6 @@ interface Props {
   onLibrary: () => void;
 }
 
-const today = (): string => new Date().toLocaleDateString('sv-SE');
-
-/** Ligne d'historique d'une partie qui se termine (gagnée ou abandonnée). */
-function historyEntry(game: SavedGame, outcome: HistoryEntry['outcome'], durationMs: number): HistoryEntry {
-  return {
-    puzzleId: game.puzzleId,
-    level: game.level,
-    startedAt: game.startedAt,
-    endedAt: today(),
-    outcome,
-    durationMs,
-    hints: game.hints,
-    checks: game.checks,
-    errors: game.errors,
-    feeling: null,
-  };
-}
-
 interface Confirmation {
   message: string;
   onConfirm: () => void;
@@ -90,14 +70,6 @@ interface Confirmation {
 
 /** Où va le pavé chiffres : dans la grille, ou dans le champ d'une fenêtre ouverte. */
 type DigitTarget = 'grid' | 'finder' | 'calculator';
-
-function Modal({ children, onClose }: { children: ReactNode; onClose?: () => void }) {
-  return (
-    <div className="modal-backdrop" onPointerDown={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div className="modal">{children}</div>
-    </div>
-  );
-}
 
 export function GameScreen(props: Props) {
   const { record, initial, onHome, onNext } = props;
@@ -184,7 +156,7 @@ export function GameScreen(props: Props) {
   const restart = () => {
     // Une partie entamée qu'on recommence avant la fin reste dans l'historique comme « abandonnée ».
     const spent = readClock(clock.current, now());
-    if (!isOver(game) && (game.undo.length > 0 || spent > 60_000)) {
+    if (!isOver(game) && wasStarted(game, spent)) {
       void addHistory(historyEntry(game, 'abandonnee', spent));
     }
     const fresh: SavedGame = {
@@ -315,40 +287,24 @@ export function GameScreen(props: Props) {
     update((s) => revealCell(s, record, solution, focus));
   };
 
-  /**
-   * Somme et combinaisons rapides (section 7.4) :
-   * - plusieurs sommes de cages dans la sélection : « + », dont le toucher affiche leur total ;
-   * - une seule somme pour plusieurs cases : « ? », qui ouvre les combinaisons de cette somme pour ces cases ;
-   * - une seule case : « ? », qui ouvre les combinaisons de toute sa cage.
-   */
-  const cageWithAnchor = (cell: number) => record.cages.find((c) => cageAnchor(c) === cell);
-  const anchors = selection.filter((cell) => cageWithAnchor(cell) !== undefined);
+  /** Somme et combinaisons rapides (section 7.4) : bouton « + » ou « ? » à côté de la sélection. */
   const selectionKey = selection.join(',');
   const openCombinations = (sum: number, cells: readonly number[]) => {
     setFinder({ ...emptyFinder(), sum: String(sum), count: String(cells.length), listed: true, cells });
     setFinderOpen(true);
     setTarget('finder');
   };
-  const focusCage = focus === null ? undefined : record.cages.find((c) => c.cells.includes(focus));
+  const quick = blocked ? null : quickAction(record, selection, focus);
   let quickBadge: { cell: number; text: string; onPress: () => void } | undefined;
-  if (!blocked && focus !== null) {
-    if (selection.length >= 2 && anchors.length >= 2) {
-      const total = anchors.reduce((sum, a) => sum + (cageWithAnchor(a)?.sum ?? 0), 0);
-      quickBadge = {
-        cell: focus,
-        text: quickSumFor === selectionKey ? String(total) : '+',
-        onPress: () => setQuickSumFor(selectionKey),
-      };
-    } else if (selection.length >= 2 && anchors.length === 1) {
-      const sum = cageWithAnchor(anchors[0])?.sum ?? 0;
-      quickBadge = { cell: focus, text: '?', onPress: () => openCombinations(sum, selection) };
-    } else if (selection.length === 1 && focusCage) {
-      quickBadge = {
-        cell: focus,
-        text: '?',
-        onPress: () => openCombinations(focusCage.sum, focusCage.cells),
-      };
-    }
+  if (quick && focus !== null) {
+    quickBadge =
+      quick.kind === 'sum'
+        ? {
+            cell: focus,
+            text: quickSumFor === selectionKey ? String(quick.total) : '+',
+            onPress: () => setQuickSumFor(selectionKey),
+          }
+        : { cell: focus, text: '?', onPress: () => openCombinations(quick.sum, quick.cells) };
   }
 
   // Marques des aides, recalculées seulement quand la grille ou la sélection change.
@@ -510,190 +466,93 @@ export function GameScreen(props: Props) {
       )}
 
       {optionsOpen && (
-        <Modal onClose={() => setOptionsOpen(false)}>
-          <h2>{T.options}</h2>
-          <div className="menu-list">
-            <button
-              type="button"
-              onClick={() => {
-                setOptionsOpen(false);
-                ask(T.eraseAllConfirm, () => update(eraseAll));
-              }}
-            >
-              {T.eraseAll}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setOptionsOpen(false);
-                ask(T.restartConfirm, restart);
-              }}
-            >
-              {T.restart}
-            </button>
-            <button
-              type="button"
-              disabled={selection.length === 0}
-              onClick={() => {
-                update((s) => eraseCells(s, selection));
-                setOptionsOpen(false);
-              }}
-            >
-              {T.eraseSelection}
-            </button>
-            {aids.autoNotes && (
-              <button
-                type="button"
-                onClick={() => {
-                  update((s) => fillAllNotes(s, record));
-                  setOptionsOpen(false);
-                }}
-              >
-                {T.fillNotes}
-              </button>
-            )}
-            <button type="button" disabled={!canUndo(game)} onClick={() => update(undo)}>
-              {T.undo}
-            </button>
-            <button type="button" disabled={!canRedo(game)} onClick={() => update(redo)}>
-              {T.redo}
-            </button>
-            <button type="button" className="secondary" onClick={() => setOptionsOpen(false)}>
-              {T.close}
-            </button>
-          </div>
-        </Modal>
+        <OptionsDialog
+          hasSelection={selection.length > 0}
+          showFillNotes={aids.autoNotes}
+          canUndo={canUndo(game)}
+          canRedo={canRedo(game)}
+          onEraseAll={() => {
+            setOptionsOpen(false);
+            ask(T.eraseAllConfirm, () => update(eraseAll));
+          }}
+          onRestart={() => {
+            setOptionsOpen(false);
+            ask(T.restartConfirm, restart);
+          }}
+          onEraseSelection={() => {
+            update((s) => eraseCells(s, selection));
+            setOptionsOpen(false);
+          }}
+          onFillNotes={() => {
+            update((s) => fillAllNotes(s, record));
+            setOptionsOpen(false);
+          }}
+          onUndo={() => update(undo)}
+          onRedo={() => update(redo)}
+          onClose={() => setOptionsOpen(false)}
+        />
       )}
 
       {menuOpen && (
-        <Modal onClose={() => setMenuOpen(false)}>
-          <h2>{T.menu}</h2>
-          <div className="menu-list">
-            {aids.check && !game.errorMode && (
-              <button type="button" disabled={game.completed} onClick={runCheck}>
-                {T.check}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                setMenuOpen(false);
-                setAidsOpen(true);
-              }}
-            >
-              {T.aidsTitle}
-            </button>
-            <button type="button" onClick={props.onToggleFavorite}>
-              {props.favorite ? T.favoriteRemove : T.favoriteAdd}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMenuOpen(false);
-                ask(T.restartConfirm, restart);
-              }}
-            >
-              {T.restart}
-            </button>
-            <button type="button" className="secondary" onClick={() => setMenuOpen(false)}>
-              {T.close}
-            </button>
-          </div>
-        </Modal>
+        <MenuDialog
+          showCheck={aids.check && !game.errorMode}
+          checkDisabled={game.completed}
+          favorite={props.favorite}
+          onCheck={runCheck}
+          onAids={() => {
+            setMenuOpen(false);
+            setAidsOpen(true);
+          }}
+          onToggleFavorite={props.onToggleFavorite}
+          onRestart={() => {
+            setMenuOpen(false);
+            ask(T.restartConfirm, restart);
+          }}
+          onClose={() => setMenuOpen(false)}
+        />
       )}
 
       {aidsOpen && (
-        <Modal onClose={() => setAidsOpen(false)}>
-          <h2>{T.aidsTitle}</h2>
-          <AidsContent
-            aids={aids}
-            onChange={(next) => update((s) => setAids(s, next))}
-            purist={PURIST_AIDS}
-            defaults={DEFAULT_AIDS}
-          />
-          <div className="modal-actions">
-            <button type="button" className="secondary" onClick={() => setAidsOpen(false)}>
-              {T.close}
-            </button>
-          </div>
-        </Modal>
+        <AidsDialog
+          aids={aids}
+          onChange={(next) => update((s) => setAids(s, next))}
+          onClose={() => setAidsOpen(false)}
+        />
       )}
 
       {confirmation && (
-        <Modal onClose={() => setConfirmation(null)}>
-          <p>{confirmation.message}</p>
-          <div className="modal-actions">
-            <button type="button" className="secondary" onClick={() => setConfirmation(null)}>
-              {T.cancel}
-            </button>
-            <button
-              type="button"
-              className="primary"
-              onClick={() => {
-                confirmation.onConfirm();
-                setConfirmation(null);
-              }}
-            >
-              {T.confirm}
-            </button>
-          </div>
-        </Modal>
+        <ConfirmDialog
+          message={confirmation.message}
+          onCancel={() => setConfirmation(null)}
+          onConfirm={() => {
+            confirmation.onConfirm();
+            setConfirmation(null);
+          }}
+        />
       )}
 
       {game.lost && (
-        <Modal>
-          <h2>{T.lostTitle}</h2>
-          <p>{title}</p>
-          <p>{T.lostText(MAX_ERRORS)}</p>
-          <p className="victory-time">{T.lostTime(formatTime(game.elapsedMs))}</p>
-          <div className="modal-actions vertical">
-            <button type="button" className="primary" onClick={restart}>
-              {T.restart}
-            </button>
-            <button type="button" className="secondary" onClick={onHome}>
-              {T.backHome}
-            </button>
-          </div>
-        </Modal>
+        <LostDialog title={title} elapsedMs={game.elapsedMs} onRestart={restart} onHome={onHome} />
       )}
 
       {game.completed && (
-        <Modal>
-          <h2>{T.victoryTitle}</h2>
-          <p>{title}</p>
-          <p className="victory-time">{T.victoryTime(formatTime(game.elapsedMs))}</p>
-          <p>{T.victoryStats(game.hints, game.checks, game.errorMode ? game.errors : null)}</p>
-          <p className="panel-help">{T.feelingQuestion}</p>
-          <div className="feelings">
-            {(Object.keys(T.feelings) as Feeling[]).map((f) => (
-              <button
-                key={f}
-                type="button"
-                className={finished?.feeling === f ? 'chosen' : ''}
-                disabled={!finished}
-                onClick={() => {
-                  if (!finished) return;
-                  const entry = { ...finished, feeling: f };
-                  setFinished(entry);
-                  void updateHistory(entry);
-                }}
-              >
-                {T.feelings[f]}
-              </button>
-            ))}
-          </div>
-          <div className="modal-actions vertical">
-            <button type="button" className="primary" onClick={onNext}>
-              {T.nextGrid}
-            </button>
-            <button type="button" onClick={restart}>
-              {T.replay}
-            </button>
-            <button type="button" className="secondary" onClick={props.onLibrary}>
-              {T.library}
-            </button>
-          </div>
-        </Modal>
+        <VictoryDialog
+          title={title}
+          elapsedMs={game.elapsedMs}
+          hints={game.hints}
+          checks={game.checks}
+          errors={game.errorMode ? game.errors : null}
+          finished={finished}
+          onFeeling={(feeling) => {
+            if (!finished) return;
+            const entry = { ...finished, feeling };
+            setFinished(entry);
+            void updateHistory(entry);
+          }}
+          onNext={onNext}
+          onReplay={restart}
+          onLibrary={props.onLibrary}
+        />
       )}
     </div>
   );

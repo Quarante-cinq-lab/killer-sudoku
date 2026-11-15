@@ -8,7 +8,17 @@ import { conflictingIds, IMPORT_PREFIX, readExtraBank } from '../bank';
 import { GAME_FORMAT, newGame } from '../game/state';
 import type { SavedGame } from '../storage';
 import { backupFileName, buildBackup, parseBackup, type BackupData } from './backup';
-import { filterAndSort, levelStats, libraryItems, monthlyAverages, type HistoryEntry } from './history';
+import {
+  filterAndSort,
+  historyEntry,
+  levelStats,
+  libraryItems,
+  monthlyAverages,
+  STARTED_AFTER_MS,
+  today,
+  wasStarted,
+  type HistoryEntry,
+} from './history';
 import { DEFAULT_SETTINGS, parseSettings } from './settings';
 
 const records = parseBank(hardBank).puzzles.slice(0, 4);
@@ -61,6 +71,33 @@ describe('bibliothèque', () => {
     expect(filterAndSort(items, none, 'meilleur_temps').at(-1)?.bestMs).toBeNull();
     expect(filterAndSort(items, none, 'derniere_partie')[0].record.id).toBe(records[2].id);
     expect(filterAndSort(items, { ...none, level: 'EXPERT' }, 'numero')).toHaveLength(0);
+  });
+});
+
+describe('fin de partie', () => {
+  it('une partie recommencée est « entamée » après une action ou plus d’une minute de jeu', () => {
+    const g = game(records[0].id);
+    expect(wasStarted(g, 0)).toBe(false);
+    expect(wasStarted(g, STARTED_AFTER_MS)).toBe(false);
+    expect(wasStarted(g, STARTED_AFTER_MS + 1)).toBe(true);
+    expect(wasStarted({ ...g, undo: [{ cells: [] }] }, 0)).toBe(true);
+  });
+
+  it('écrit la ligne d’historique de la partie', () => {
+    const g = { ...game(records[0].id), hints: 2, checks: 1, errors: 1 };
+    expect(historyEntry(g, 'abandonnee', 90_000, '2026-11-15')).toEqual({
+      puzzleId: records[0].id,
+      level: 'HARD',
+      startedAt: '2026-11-12',
+      endedAt: '2026-11-15',
+      outcome: 'abandonnee',
+      durationMs: 90_000,
+      hints: 2,
+      checks: 1,
+      errors: 1,
+      feeling: null,
+    });
+    expect(today()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });
 

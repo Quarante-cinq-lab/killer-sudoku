@@ -24,6 +24,51 @@ export interface HistoryEntry {
   feeling: Feeling | null;
 }
 
+/** Date du jour au format AAAA-MM-JJ, à l'heure de l'iPad (dates de début et de fin des parties). */
+export const today = (): string => new Date().toLocaleDateString('sv-SE');
+
+/** Ce qu'il faut savoir d'une partie pour écrire sa ligne d'historique. */
+export interface EndedGame {
+  puzzleId: string;
+  level: Level;
+  startedAt: string;
+  hints: number;
+  checks: number;
+  errors: number;
+}
+
+/** Ligne d'historique d'une partie qui se termine : gagnée, perdue, ou abandonnée (recommencée avant la fin). */
+export function historyEntry(
+  game: EndedGame,
+  outcome: HistoryEntry['outcome'],
+  durationMs: number,
+  endedAt: string = today(),
+): HistoryEntry {
+  return {
+    puzzleId: game.puzzleId,
+    level: game.level,
+    startedAt: game.startedAt,
+    endedAt,
+    outcome,
+    durationMs,
+    hints: game.hints,
+    checks: game.checks,
+    errors: game.errors,
+    feeling: null,
+  };
+}
+
+/** Temps de jeu au-delà duquel une partie recommencée compte comme entamée, même sans aucune action. */
+export const STARTED_AFTER_MS = 60_000;
+
+/**
+ * Une partie qu'on recommence avant la fin reste dans l'historique comme « abandonnée » si elle était
+ * entamée : au moins une action, ou plus d'une minute de jeu.
+ */
+export function wasStarted(game: { undo: readonly unknown[] }, spentMs: number): boolean {
+  return game.undo.length > 0 || spentMs > STARTED_AFTER_MS;
+}
+
 /** Ce qu'il faut savoir d'une partie en cours pour la bibliothèque. */
 export interface GameSummary {
   puzzleId: string;
