@@ -192,19 +192,19 @@ L'écran de jeu reprend la disposition de l'application de référence : la gril
 | Colonne gauche | Annuler, Rétablir, Indice |
 | Pavé chiffres (grand) | 1 à 9 : saisie d'un chiffre définitif |
 | Pavé notes (plus petit, autre teinte) | 1 à 9 : ajoute la note, ou la retire si elle est déjà présente |
-| Colonne droite | Combinaisons de la cage (de la case sélectionnée), Combinaisons (somme et nombre de cases au choix), Calculatrice, Menu Options (icône crayon) |
+| Colonne droite | Combinaisons (somme et nombre de cases au choix), Calculatrice, Menu Options (icône crayon) |
 
 - Toutes les touches du clavier réagissent dès que le doigt se pose, sans attendre qu'il se relève, et ne changent pas de taille pendant l'appui (retours d'essai du 15 novembre 2026 : des appuis n'étaient pas pris en compte).
 - Un chiffre définitif remplace les notes de la case.
 - Une note s'applique à toutes les cases sélectionnées.
 - L'effacement passe par le menu Options (« Effacer la sélection », « Tout effacer »).
-- Annuler et Rétablir couvrent toutes les actions : chiffres, notes, combinaisons barrées, cages virtuelles. L'historique n'a pas de limite et il est conservé dans la sauvegarde.
+- Annuler et Rétablir couvrent toutes les actions sur la grille : chiffres, notes, cages virtuelles. L'historique n'a pas de limite et il est conservé dans la sauvegarde.
 
 ### 7.4 Outils killer
 
-- **Combinaisons de la cage** : fenêtre qui s'ouvre sur la cage de la case sélectionnée (et sur ses cages virtuelles) et liste toutes les combinaisons possibles pour sa taille et sa somme. Un toucher barre ou rétablit une combinaison. Ces choix sont mémorisés par cage et sauvegardés. La fenêtre est flottante, déplaçable, et se ferme par un « x ».
+- **Combinaisons de la cage** : retirée le 15 novembre 2026 (second retour d'essai), remplacée par le bouton « ? » sur la grille (voir plus bas). On ne barre plus de combinaison à la main.
 - **Combinaisons** (anciennement « Calculatrice » ; évolution E3) : fenêtre flottante indépendante de la grille, comme dans l'application de référence. Deux champs, « Somme » et « Nombre de cases », se remplissent avec le pavé chiffres, chiffre par chiffre. Une touche « 0 » permet d'écrire les nombres à deux chiffres (1 puis 0 pour 10, 2 puis 5 pour 25). Une touche « C » vide le champ actif. Un toucher sur un champ le rend actif. Le bouton « Lister les combinaisons » affiche toutes les combinaisons possibles, par exemple 25 en 4 cases. En option, on peut ajouter des chiffres obligatoires ou exclus.
-- **Calculatrice** (évolution E3) : une vraie calculatrice, avec sa propre icône. Fenêtre flottante et déplaçable, qui ne masque pas la grille plus que nécessaire. Touches 0 à 9, +, −, ×, ÷, =, C (tout effacer) et ← (effacer le dernier chiffre). Elle affiche l'opération en cours et le résultat. Le dernier résultat reste affiché quand on ferme puis rouvre la calculatrice pendant la partie. Ses touches font au moins 60 px de haut, pour être utilisables avec de gros doigts (retours d'essai du 15 novembre 2026).
+- **Calculatrice** (évolution E3) : une vraie calculatrice, avec sa propre icône. Fenêtre flottante et déplaçable, qui ne masque pas la grille plus que nécessaire. Touches 0, +, −, ×, ÷, = et C (tout effacer) ; les chiffres 1 à 9 se tapent avec le grand pavé, qui change de teinte tant que la calculatrice est ouverte (second retour d'essai du 15 novembre 2026 : inutile de répéter les chiffres déjà présents à l'écran). Elle affiche l'opération en cours et le résultat. Le dernier résultat reste affiché quand on ferme puis rouvre la calculatrice pendant la partie. Ses touches font au moins 60 px de haut, pour être utilisables avec de gros doigts (retours d'essai du 15 novembre 2026).
 - Les fenêtres « Combinaisons » et « Calculatrice » ne sont pas des aides : elles restent disponibles même avec le préréglage Puriste.
 
 **Somme et combinaisons rapides (« + » et « ? »)**
@@ -212,8 +212,10 @@ L'écran de jeu reprend la disposition de l'application de référence : la gril
 Retours d'essai du 15 novembre 2026 : elles remplacent le mode Somme de l'évolution E4 (bouton « Somme »), retiré.
 
 1. Quand la sélection contient plusieurs cases portant la somme d'une cage (le petit nombre en haut à gauche), un petit bouton « + » apparaît sur la grille, à côté de la dernière case sélectionnée. Le toucher affiche à sa place le total de ces sommes, par exemple 13 + 9 + 2 = 24. Seules les sommes des cages comptent, pas les chiffres posés.
-2. Quand la sélection compte plusieurs cases mais une seule somme de cage, un bouton « ? » apparaît : il affiche les combinaisons possibles pour cette somme et le nombre de cases sélectionnées.
-3. Ces boutons disparaissent dès que la sélection change.
+2. Quand la sélection compte plusieurs cases mais une seule somme de cage, un bouton « ? » apparaît : il ouvre « Combinaisons » sur cette somme et le nombre de cases sélectionnées.
+3. Quand une seule case est sélectionnée, le bouton « ? » ouvre « Combinaisons » sur toute sa cage (sa somme et son nombre de cases).
+4. Dans la liste ouverte par « ? », les combinaisons qui contredisent les chiffres déjà posés dans ces cases sont grisées (aide « Filtrage des combinaisons »).
+5. Ces boutons disparaissent dès que la sélection change.
 
 **Cages virtuelles (refonte, évolution E5)**
 
@@ -227,7 +229,7 @@ Une cage virtuelle sert à noter une déduction du type « ces cases font X au t
    - sinon, le joueur saisit la somme lui-même.
 2. **Affichage** : contour en pointillé d'une couleur distincte, avec la somme dans un petit cadre de la même couleur. Plusieurs cages virtuelles peuvent coexister, chacune avec sa couleur.
 3. **Exploitation** :
-   - si les cases de la cage virtuelle se voient toutes deux à deux (même ligne, colonne, bloc ou même cage : donc sans chiffre répété), la fenêtre « Combinaisons de la cage » fonctionne dessus, avec possibilité de barrer ;
+   - si les cases de la cage virtuelle se voient toutes deux à deux (même ligne, colonne, bloc ou même cage : donc sans chiffre répété), leurs combinaisons étaient listées (fenêtre retirée le 15 novembre 2026) ;
    - sinon, elle affiche seulement la somme et le nombre de cases, et indique que des chiffres peuvent se répéter ;
    - le signalement des conflits vérifie aussi les cages virtuelles (somme dépassée, combinaison impossible).
 4. **Gestion** : une liste des cages virtuelles permet de les masquer, les afficher ou les supprimer. Elles sont sauvegardées avec la partie et effacées par « Recommencer la grille ».
@@ -466,6 +468,7 @@ Claude Code développe l'application en neuf étapes, dans l'ordre. Une étape n
 | R1 | Indice : chiffre de la case sélectionnée, 3 par partie (section 9) | Le bon chiffre s'inscrit ; jamais compté comme erreur ; bouton grisé après 3 indices |
 | R3 | « + » et « ? » sur la grille ; boutons « Somme » et « Cages virtuelles » retirés (7.4) | Total juste des sommes de cages sélectionnées ; combinaisons justes pour une seule somme |
 | R4 | Calculatrice agrandie (7.4) | Touches d'au moins 60 px de haut |
+| R5 | Calculatrice réduite à + − × ÷ = 0 C, chiffres au grand pavé ; « Combinaisons de la cage » retirée, « ? » aussi sur une seule case, combinaisons impossibles grisées (7.3, 7.4) | Un calcul complet (13 + 9 + 2 =) se fait avec le grand pavé ; « ? » sur une case donne les combinaisons de toute sa cage, grisées selon les chiffres posés |
 
 **Consignes pour Claude Code**
 

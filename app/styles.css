@@ -1277,7 +1277,7 @@ button.secondary {
 /* ---------- Calculatrice (E3) ---------- */
 
 .floating.compact {
-  width: 330px;
+  width: 300px;
 }
 
 .calc-screen {
@@ -1320,12 +1320,9 @@ button.secondary {
   color: var(--key-note-fg);
 }
 
+/* Deux rangées : C ÷ × − puis 0 + = (le « = » prend deux places). */
 .calc-pad .calc-equals {
-  grid-row: span 2;
-}
-
-.calc-pad button:last-child {
-  grid-column: span 3;
+  grid-column: span 2;
 }
 
 /* ---------- « + » et « ? » sur la grille (retours d'essai du 15 novembre 2026) ---------- */

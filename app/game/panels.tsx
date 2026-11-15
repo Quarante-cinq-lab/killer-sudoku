@@ -6,9 +6,8 @@ import { useRef, useState, type ReactNode } from 'react';
 import { TEXTS } from '../../texts/fr';
 import { Icon } from '../icons';
 import { PressButton } from './Keypad';
-import type { ComboLine, ComboSource } from './aids';
 import type { Aids } from './state';
-import { display, pressKey, type CalcKey, type CalcState } from './calculator';
+import { display, type CalcKey, type CalcState } from './calculator';
 
 const T = TEXTS.game;
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -68,61 +67,6 @@ export function FloatingPanel({
   );
 }
 
-/** Fenêtre des combinaisons de la cage sélectionnée (et de ses cages virtuelles). */
-export function CombinationsContent({
-  sources,
-  linesOf,
-  struck,
-  filter,
-  mayRepeat,
-  onToggle,
-}: {
-  sources: readonly ComboSource[];
-  linesOf: (source: ComboSource) => ComboLine[];
-  struck: Readonly<Record<string, number[]>>;
-  filter: boolean;
-  mayRepeat: (source: ComboSource) => boolean;
-  onToggle: (key: string, mask: number) => void;
-}) {
-  if (sources.length === 0) return <p className="panel-help">{T.selectCell}</p>;
-  return (
-    <>
-      {sources.map((source) => {
-        const lines = linesOf(source);
-        return (
-          <div key={source.key} className="combo-group">
-            <h3>
-              {source.virtual
-                ? T.virtualCageLabel(source.sum, source.cells.length)
-                : T.cageLabel(source.sum, source.cells.length)}
-            </h3>
-            {mayRepeat(source) && <p className="panel-help">{T.mayRepeat}</p>}
-            {!mayRepeat(source) && lines.length === 0 && <p className="panel-help">{T.noCombination}</p>}
-            <div className="combo-list">
-              {/* Chiffres qui peuvent se répéter : pas de liste de combinaisons (section 7.4, E5). */}
-              {(mayRepeat(source) ? [] : lines).map((line) => {
-                const isStruck = struck[source.key]?.includes(line.mask) ?? false;
-                const greyed = filter && !line.compatible;
-                return (
-                  <button
-                    key={line.mask}
-                    type="button"
-                    className={`combo${isStruck ? ' struck' : ''}${greyed ? ' greyed' : ''}`}
-                    onClick={() => onToggle(source.key, line.mask)}
-                  >
-                    {line.digits.join('')}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-      <p className="panel-help">{T.strikeHelp}</p>
-    </>
-  );
-}
-
 export interface FinderState {
   sum: string;
   count: string;
@@ -131,6 +75,8 @@ export interface FinderState {
   required: number;
   excluded: number;
   listed: boolean;
+  /** Cases d'où vient la recherche (bouton « ? ») : on grise les combinaisons contredites par leurs chiffres. */
+  cells?: readonly number[] | undefined;
 }
 
 export const emptyFinder = (): FinderState => ({
@@ -148,17 +94,20 @@ export function typeInFinder(calc: FinderState, digit: number): FinderState {
   const max = calc.active === 'sum' ? 45 : 9;
   const next = field === '0' ? String(digit) : field + String(digit);
   if (Number(next) > max) return calc;
-  return { ...calc, [calc.active]: next, listed: false };
+  return { ...calc, [calc.active]: next, listed: false, cells: undefined };
 }
 
 /** Calculatrice libre : « Somme » et « Nombre de cases », remplis avec le pavé chiffres. */
 export function FinderContent({
   calc,
   lines,
+  isGreyed,
   onChange,
 }: {
   calc: FinderState;
   lines: number[][];
+  /** Combinaison contredite par les chiffres posés (affichée en gris). */
+  isGreyed: (digits: readonly number[]) => boolean;
   onChange: (calc: FinderState) => void;
 }) {
   const field = (name: 'sum' | 'count', label: string) => (
@@ -188,7 +137,10 @@ export function FinderContent({
         <button type="button" onClick={() => onChange(typeInFinder(calc, 0))}>
           0
         </button>
-        <button type="button" onClick={() => onChange({ ...calc, [calc.active]: '', listed: false })}>
+        <button
+          type="button"
+          onClick={() => onChange({ ...calc, [calc.active]: '', listed: false, cells: undefined })}
+        >
           {T.calcClear}
         </button>
       </div>
@@ -217,7 +169,7 @@ export function FinderContent({
         <div className="combo-list">
           {lines.length === 0 && <p className="panel-help">{T.noCombination}</p>}
           {lines.map((digits) => (
-            <span key={digits.join('')} className="combo static">
+            <span key={digits.join('')} className={isGreyed(digits) ? 'combo static greyed' : 'combo static'}>
               {digits.join('')}
             </span>
           ))}
@@ -264,21 +216,17 @@ export function AidsContent({
   );
 }
 
-const CALC_KEYS: CalcKey[][] = [
-  ['C', '←', '÷', '×'],
-  ['7', '8', '9', '−'],
-  ['4', '5', '6', '+'],
-  ['1', '2', '3', '='],
-  ['0'],
-];
+/** Touches de la calculatrice : les chiffres 1 à 9 se tapent avec le grand pavé (second retour du 15 novembre). */
+const CALC_KEYS: CalcKey[] = ['C', '÷', '×', '−', '0', '+', '='];
 
-/** Calculatrice (évolution E3) : ses propres touches, l'opération en cours et le résultat. */
+/** Calculatrice (évolution E3) : l'opération en cours, le résultat et les touches autres que 1 à 9. */
 export function CalculatorContent({
   state,
-  onChange,
+  onKey,
 }: {
   state: CalcState;
-  onChange: (state: CalcState) => void;
+  /** Touche appuyée : elle s'applique toujours au dernier état de la calculatrice. */
+  onKey: (key: CalcKey) => void;
 }) {
   const { operation, value } = display(state, T.calcError);
   return (
@@ -288,16 +236,17 @@ export function CalculatorContent({
         <strong className="calc-value">{value || ' '}</strong>
       </div>
       <div className="calc-pad">
-        {CALC_KEYS.flat().map((key) => (
+        {CALC_KEYS.map((key) => (
           <PressButton
             key={key}
             className={key === '=' ? 'primary calc-equals' : /^\d$/.test(key) ? 'calc-digit' : 'calc-op'}
-            onPress={() => onChange(pressKey(state, key))}
+            onPress={() => onKey(key)}
           >
             {key}
           </PressButton>
         ))}
       </div>
+      <p className="panel-help">{T.calcPadHelp}</p>
     </div>
   );
 }

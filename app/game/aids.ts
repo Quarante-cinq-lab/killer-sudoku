@@ -1,20 +1,10 @@
 /**
  * Calculs des aides (section 9) et des outils killer (section 7.4), sans affichage : conflits,
- * vérification, combinaisons d'une cage. Tout est recalculé à partir de l'état de la grille.
+ * vérification, combinaisons. Tout est recalculé à partir de l'état de la grille.
  */
 import { digitBit, digitsOf } from '../../engine/bits';
 import { combinationsFor, combinationsWith } from '../../engine/combinations';
-import {
-  boxOf,
-  cageAnchor,
-  cageIndexByCell,
-  colOf,
-  PEERS,
-  rowOf,
-  UNITS,
-  type Puzzle,
-} from '../../engine/model';
-import type { VirtualCage } from './state';
+import { boxOf, cageIndexByCell, colOf, PEERS, rowOf, UNITS, type Puzzle } from '../../engine/model';
 
 /**
  * Cases en conflit : un même chiffre deux fois dans une ligne, une colonne, un bloc ou une cage, ou une
@@ -62,32 +52,6 @@ export function unitCells(cell: number): Set<number> {
   return new Set([...UNITS[r], ...UNITS[9 + c], ...UNITS[18 + b]]);
 }
 
-/** Une cage vue par la fenêtre des combinaisons : réelle ou virtuelle. */
-export interface ComboSource {
-  /** Clé des combinaisons barrées (voir GameState.struck). */
-  key: string;
-  virtual: boolean;
-  sum: number;
-  cells: readonly number[];
-}
-
-/** Les cages de la case sélectionnée : sa cage réelle, puis les cages virtuelles qui la contiennent. */
-export function comboSources(
-  puzzle: Puzzle,
-  virtualCages: readonly VirtualCage[],
-  cell: number,
-): ComboSource[] {
-  const cage = puzzle.cages[cageIndexByCell(puzzle)[cell]];
-  const sources: ComboSource[] = [
-    { key: `c${cageAnchor(cage)}`, virtual: false, sum: cage.sum, cells: cage.cells },
-  ];
-  for (const v of virtualCages) {
-    if (!v.hidden && v.cells.includes(cell))
-      sources.push({ key: `v${v.id}`, virtual: true, sum: v.sum, cells: v.cells });
-  }
-  return sources;
-}
-
 /** Vrai si toutes les cases se voient deux à deux : leurs chiffres sont alors forcément différents. */
 export function allDistinct(puzzle: Puzzle, cells: readonly number[]): boolean {
   const owner = cageIndexByCell(puzzle);
@@ -96,24 +60,16 @@ export function allDistinct(puzzle: Puzzle, cells: readonly number[]): boolean {
   );
 }
 
-export interface ComboLine {
-  mask: number;
-  digits: number[];
-  /** Faux si la combinaison contredit les chiffres déjà posés dans la cage (filtrage, section 9). */
-  compatible: boolean;
-}
-
 /**
- * Combinaisons d'une cage : toutes celles de sa taille et de sa somme. Une combinaison est incompatible
- * si un chiffre déjà posé dans la cage n'en fait pas partie.
+ * Vrai si une combinaison contredit les chiffres déjà posés dans ces cases : l'un d'eux n'en fait pas partie
+ * (filtrage des combinaisons, section 9).
  */
-export function combinationLines(source: ComboSource, values: readonly number[]): ComboLine[] {
-  const placed = source.cells.reduce((m, c) => (values[c] ? m | digitBit(values[c]) : m), 0);
-  return combinationsFor(source.cells.length, source.sum).map((mask) => ({
-    mask,
-    digits: digitsOf(mask),
-    compatible: (placed & ~mask) === 0,
-  }));
+export function contradicts(
+  digits: readonly number[],
+  cells: readonly number[],
+  values: readonly number[],
+): boolean {
+  return cells.some((cell) => values[cell] !== 0 && !digits.includes(values[cell]));
 }
 
 /** Calculatrice libre : combinaisons d'une somme en N cases, avec chiffres obligatoires et exclus. */

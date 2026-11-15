@@ -11,16 +11,8 @@ import { Icon } from '../icons';
 import type { Feeling, HistoryEntry } from '../data/history';
 import type { NotesLayout } from '../data/settings';
 import { addHistory, saveGame, updateHistory, type SavedGame } from '../storage';
-import {
-  allDistinct,
-  finderLines,
-  combinationLines,
-  comboSources,
-  conflictCells,
-  unitCells,
-  wrongCells,
-} from './aids';
-import { emptyCalc, type CalcState } from './calculator';
+import { contradicts, finderLines, conflictCells, unitCells, wrongCells } from './aids';
+import { emptyCalc, pressKey, type CalcKey, type CalcState } from './calculator';
 import { virtualConflictCells } from './virtual';
 import { formatTime, now, readClock, startClock, stopClock, stoppedClock, type Clock } from './clock';
 import { Keypad } from './Keypad';
@@ -28,7 +20,6 @@ import {
   AidsContent,
   CalculatorContent,
   FinderContent,
-  CombinationsContent,
   emptyFinder,
   FloatingPanel,
   typeInFinder,
@@ -51,7 +42,6 @@ import {
   redo,
   setAids,
   setDigit,
-  toggleCombination,
   toggleNote,
   undo,
   MAX_HINTS,
@@ -99,7 +89,7 @@ interface Confirmation {
 }
 
 /** Où va le pavé chiffres : dans la grille, ou dans le champ d'une fenêtre ouverte. */
-type DigitTarget = 'grid' | 'finder';
+type DigitTarget = 'grid' | 'finder' | 'calculator';
 
 function Modal({ children, onClose }: { children: ReactNode; onClose?: () => void }) {
   return (
@@ -119,7 +109,6 @@ export function GameScreen(props: Props) {
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [aidsOpen, setAidsOpen] = useState(false);
-  const [combosOpen, setCombosOpen] = useState(false);
   const [finderOpen, setFinderOpen] = useState(false);
   const [target, setTarget] = useState<DigitTarget>('grid');
   const [finder, setFinder] = useState<FinderState>(emptyFinder);
@@ -252,12 +241,21 @@ export function GameScreen(props: Props) {
 
   const blocked = paused || isOver(game);
   const aids = game.aids;
-  const digitTarget: DigitTarget = target === 'finder' && finderOpen ? 'finder' : 'grid';
+  // Le pavé va à la dernière fenêtre utilisée ; si elle est fermée, à l'autre fenêtre ouverte, sinon à la grille.
+  const digitTarget: DigitTarget =
+    target === 'calculator' && calcOpen
+      ? 'calculator'
+      : finderOpen
+        ? 'finder'
+        : calcOpen
+          ? 'calculator'
+          : 'grid';
 
   /** Grand pavé : chiffre dans la grille, ou dans le champ de la fenêtre active. */
   const onDigit = (d: number) => {
     if (blocked) return;
     if (digitTarget === 'finder') setFinder((c) => typeInFinder(c, d));
+    else if (digitTarget === 'calculator') setCalcState((c) => pressKey(c, String(d) as CalcKey));
     else update((s) => setDigit(s, record, selection, d, solution));
   };
   const onNote = (d: number) => !blocked && update((s) => toggleNote(s, selection, d));
@@ -318,44 +316,40 @@ export function GameScreen(props: Props) {
   };
 
   /**
-   * Somme et combinaisons rapides (section 7.4) : avec plusieurs cases sélectionnées, « + » si elles portent
-   * plusieurs sommes de cages (le toucher affiche leur total), « ? » si elles n'en portent qu'une (le
-   * toucher ouvre les combinaisons de cette somme pour ce nombre de cases).
+   * Somme et combinaisons rapides (section 7.4) :
+   * - plusieurs sommes de cages dans la sélection : « + », dont le toucher affiche leur total ;
+   * - une seule somme pour plusieurs cases : « ? », qui ouvre les combinaisons de cette somme pour ces cases ;
+   * - une seule case : « ? », qui ouvre les combinaisons de toute sa cage.
    */
-  const anchors = selection.filter((cell) => record.cages.some((c) => cageAnchor(c) === cell));
+  const cageWithAnchor = (cell: number) => record.cages.find((c) => cageAnchor(c) === cell);
+  const anchors = selection.filter((cell) => cageWithAnchor(cell) !== undefined);
   const selectionKey = selection.join(',');
-  const quickBadge =
-    blocked || selection.length < 2 || anchors.length === 0 || focus === null
-      ? undefined
-      : anchors.length >= 2
-        ? {
-            cell: focus,
-            text:
-              quickSumFor === selectionKey
-                ? String(
-                    anchors.reduce(
-                      (s, a) => s + (record.cages.find((c) => cageAnchor(c) === a)?.sum ?? 0),
-                      0,
-                    ),
-                  )
-                : '+',
-            onPress: () => setQuickSumFor(selectionKey),
-          }
-        : {
-            cell: focus,
-            text: '?',
-            onPress: () => {
-              const sum = record.cages.find((c) => cageAnchor(c) === anchors[0])?.sum ?? 0;
-              setFinder({
-                ...emptyFinder(),
-                sum: String(sum),
-                count: String(selection.length),
-                listed: true,
-              });
-              setFinderOpen(true);
-              setTarget('finder');
-            },
-          };
+  const openCombinations = (sum: number, cells: readonly number[]) => {
+    setFinder({ ...emptyFinder(), sum: String(sum), count: String(cells.length), listed: true, cells });
+    setFinderOpen(true);
+    setTarget('finder');
+  };
+  const focusCage = focus === null ? undefined : record.cages.find((c) => c.cells.includes(focus));
+  let quickBadge: { cell: number; text: string; onPress: () => void } | undefined;
+  if (!blocked && focus !== null) {
+    if (selection.length >= 2 && anchors.length >= 2) {
+      const total = anchors.reduce((sum, a) => sum + (cageWithAnchor(a)?.sum ?? 0), 0);
+      quickBadge = {
+        cell: focus,
+        text: quickSumFor === selectionKey ? String(total) : '+',
+        onPress: () => setQuickSumFor(selectionKey),
+      };
+    } else if (selection.length >= 2 && anchors.length === 1) {
+      const sum = cageWithAnchor(anchors[0])?.sum ?? 0;
+      quickBadge = { cell: focus, text: '?', onPress: () => openCombinations(sum, selection) };
+    } else if (selection.length === 1 && focusCage) {
+      quickBadge = {
+        cell: focus,
+        text: '?',
+        onPress: () => openCombinations(focusCage.sum, focusCage.cells),
+      };
+    }
+  }
 
   // Marques des aides, recalculées seulement quand la grille ou la sélection change.
   const marks: GridMarks = useMemo(() => {
@@ -462,35 +456,19 @@ export function GameScreen(props: Props) {
         onHint={onHint}
         hintEnabled={aids.hint}
         hintsLeft={Math.max(0, MAX_HINTS - game.hints)}
-        onCombinations={() => setCombosOpen((o) => !o)}
-        onCalculator={() => setCalcOpen((o) => !o)}
+        onCalculator={() => {
+          setCalcOpen((o) => !o);
+          setTarget('calculator');
+        }}
         onFinder={() => {
           setFinderOpen((o) => !o);
           setTarget('finder');
         }}
         open={{
-          combinations: combosOpen,
           finder: finderOpen,
           calculator: calcOpen,
         }}
       />
-
-      {!blocked && combosOpen && (
-        <FloatingPanel
-          title={T.combinationsTitle}
-          start={{ x: panelX('right'), y: 70 }}
-          onClose={() => setCombosOpen(false)}
-        >
-          <CombinationsContent
-            sources={focus === null ? [] : comboSources(record, game.virtualCages, focus)}
-            linesOf={(source) => combinationLines(source, game.values)}
-            struck={game.struck}
-            filter={aids.filterCombinations}
-            mayRepeat={(source) => source.virtual && !allDistinct(record, source.cells)}
-            onToggle={(key, mask) => update((s) => toggleCombination(s, key, mask))}
-          />
-        </FloatingPanel>
-      )}
 
       {!blocked && calcOpen && (
         <FloatingPanel
@@ -499,7 +477,13 @@ export function GameScreen(props: Props) {
           onClose={() => setCalcOpen(false)}
           compact
         >
-          <CalculatorContent state={calcState} onChange={setCalcState} />
+          <CalculatorContent
+            state={calcState}
+            onKey={(key) => {
+              setCalcState((c) => pressKey(c, key));
+              setTarget('calculator');
+            }}
+          />
         </FloatingPanel>
       )}
 
@@ -512,6 +496,11 @@ export function GameScreen(props: Props) {
           <FinderContent
             calc={finder}
             lines={finderLines(Number(finder.sum), Number(finder.count), finder.required, finder.excluded)}
+            isGreyed={(digits) =>
+              aids.filterCombinations &&
+              finder.cells !== undefined &&
+              contradicts(digits, finder.cells, game.values)
+            }
             onChange={(c) => {
               setFinder(c);
               setTarget('finder');

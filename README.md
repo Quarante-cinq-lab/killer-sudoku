@@ -157,16 +157,15 @@ Pour voir le raisonnement d'une grille de la banque : `npm run trace -- data/ban
 
 - **Touches** : toutes les touches (pavés, outils, calculatrice) réagissent dès que le doigt se pose, sans
   attendre qu'il se relève : un appui bref ou un peu glissé n'est plus perdu.
-- **Combinaisons de la cage** : toutes les combinaisons de la cage sélectionnée.
-  Un toucher barre ou rétablit une combinaison ; celles qui contredisent les chiffres posés sont grisées.
 - **Combinaisons** (bloc-notes) : « Somme » et « Nombre de cases » se remplissent avec le grand pavé (qui
   change de teinte), « 0 » pour 10, 20…, « C » pour effacer ; chiffres obligatoires ou exclus en option.
-- **Calculatrice** : une vraie calculatrice (+, −, ×, ÷, =, C, ←), avec l'opération en cours et le résultat,
-  et de grandes touches (62 px). Le résultat reste affiché quand on ferme puis rouvre la fenêtre.
+- **Calculatrice** : touches + − × ÷ = 0 C ; les chiffres 1 à 9 se tapent avec le grand pavé, qui change de
+  teinte tant qu'elle est ouverte. Le résultat reste affiché quand on ferme puis rouvre la fenêtre.
 - **« + » sur la grille** : quand la sélection contient les cases portant la somme de plusieurs cages, un
   bouton « + » apparaît dans un coin ; le toucher affiche le total de ces sommes de cages.
-- **« ? » sur la grille** : quand la sélection compte plusieurs cases mais une seule somme de cage, le
-  bouton « ? » ouvre « Combinaisons » rempli avec cette somme et ce nombre de cases.
+- **« ? » sur la grille** : avec une seule case sélectionnée, il ouvre « Combinaisons » sur toute sa cage ;
+  avec plusieurs cases mais une seule somme de cage, sur cette somme et ce nombre de cases. Les combinaisons
+  qui contredisent les chiffres déjà posés dans ces cases sont grisées.
 - Les fenêtres se déplacent en faisant glisser leur barre de titre.
 - **Aides** (menu « ⋯ » → Aides de la partie) : surlignages, conflits, nettoyage automatique des notes,
   filtrage des combinaisons, notes automatiques, vérification, indice. Préréglage **Puriste**.
@@ -174,7 +173,7 @@ Pour voir le raisonnement d'une grille de la banque : `npm run trace -- data/ban
 - **Indice** : sélectionner une case puis « Indice » : le bon chiffre s'y inscrit. Trois indices au plus par
   partie (le bouton affiche ceux qui restent) ; un indice n'est jamais compté comme une erreur.
 - **Annuler** après un chiffre faux : le chiffre disparaît et les notes de la case reviennent, mais l'erreur
-  reste comptée. Annuler et Rétablir couvrent aussi les combinaisons barrées.
+  reste comptée. Annuler et Rétablir couvrent toute la grille.
 - Les cages virtuelles créées avec une version précédente restent dessinées ; on ne peut plus en créer.
 
 ## Bibliothèque, statistiques et réglages (étape 6)

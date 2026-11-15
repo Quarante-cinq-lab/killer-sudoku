@@ -1,6 +1,6 @@
 /**
- * Calculatrice (évolution E3) : touches 0 à 9, +, −, ×, ÷, =, C (tout effacer) et ← (effacer le dernier
- * chiffre). Fonctions pures : chaque touche transforme l'état. × et ÷ passent avant + et −.
+ * Calculatrice (évolution E3) : touches 0 à 9, +, −, ×, ÷, =, C (tout effacer) et ← (effacer le dernier chiffre ;
+ * pas affichée à l’écran). Fonctions pures : chaque touche transforme l’état. × et ÷ passent avant + et −.
  */
 export type Operator = '+' | '−' | '×' | '÷';
 export type CalcKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | Operator | '=' | 'C' | '←';

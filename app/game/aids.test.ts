@@ -1,16 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { parseBank } from '../../engine/bank';
-import { cageAnchor, parseSolution } from '../../engine/model';
+import { parseSolution } from '../../engine/model';
 import hardBank from '../../data/bank-hard.json';
-import {
-  allDistinct,
-  finderLines,
-  combinationLines,
-  comboSources,
-  conflictCells,
-  unitCells,
-  wrongCells,
-} from './aids';
+import { allDistinct, finderLines, conflictCells, contradicts, unitCells, wrongCells } from './aids';
 import {
   addVirtualCage,
   GAME_FORMAT,
@@ -91,15 +83,12 @@ describe('vérification et surlignage', () => {
 });
 
 describe('combinaisons', () => {
-  it('liste les combinaisons de la cage et grise celles qui contredisent les chiffres posés', () => {
-    const [source] = comboSources(record, [], record.cages[0].cells[0]);
-    expect(source.key).toBe(`c${cageAnchor(record.cages[0])}`);
+  it('grise les combinaisons qui contredisent les chiffres posés', () => {
     const values = empty();
-    const cell = source.cells[0];
-    values[cell] = solution[cell];
-    const lines = combinationLines(source, values);
-    expect(lines.length).toBeGreaterThan(0);
-    for (const line of lines) expect(line.compatible).toBe(line.digits.includes(solution[cell]));
+    values[0] = 4;
+    expect(contradicts([1, 4, 8], [0, 1, 2], values)).toBe(false);
+    expect(contradicts([1, 3, 9], [0, 1, 2], values)).toBe(true);
+    expect(contradicts([1, 3, 9], [1, 2], values)).toBe(false); // la case 0 n'est pas concernée
   });
 
   it('barrer une combinaison est mémorisé par cage et s’annule', () => {
@@ -121,10 +110,9 @@ describe('combinaisons', () => {
 });
 
 describe('cages virtuelles', () => {
-  it('s’ajoutent, alimentent les combinaisons et se suppriment, le tout annulable', () => {
+  it('s’ajoutent et se suppriment, le tout annulable', () => {
     let s = addVirtualCage(fresh(), [3, 2], 12);
     expect(s.virtualCages).toEqual([{ id: 1, sum: 12, cells: [2, 3] }]);
-    expect(comboSources(record, s.virtualCages, 2).map((x) => x.key)).toContain('v1');
     s = toggleCombination(s, 'v1', 0b100001);
     s = removeVirtualCage(s, 1);
     expect(s.virtualCages).toEqual([]);

@@ -1,6 +1,6 @@
 /**
  * Double clavier (section 7.3) : outils à gauche, grand pavé des chiffres, petit pavé des notes,
- * outils killer à droite. Un outil dont la fenêtre est ouverte apparaît enfoncé.
+ * outils killer à droite (Combinaisons, Calculatrice, Options). Un outil dont la fenêtre est ouverte apparaît enfoncé.
  *
  * Toutes les touches réagissent dès que le doigt se pose (retours d'essai du 15 novembre 2026) : attendre
  * que le doigt se relève faisait perdre des appuis brefs ou un peu glissés sur l'iPad.
@@ -16,7 +16,7 @@ interface Props {
   canUndo: boolean;
   canRedo: boolean;
   disabled: boolean;
-  /** Le grand pavé écrit dans une fenêtre (Combinaisons) : il change de teinte. */
+  /** Le grand pavé écrit dans une fenêtre (Combinaisons ou Calculatrice) : il change de teinte. */
   digitsToPanel: boolean;
   onUndo: () => void;
   onRedo: () => void;
@@ -27,11 +27,10 @@ interface Props {
   hintEnabled: boolean;
   /** Indices encore disponibles dans la partie. */
   hintsLeft: number;
-  onCombinations: () => void;
   onFinder: () => void;
   onCalculator: () => void;
   /** Fenêtres ouvertes (boutons affichés enfoncés). */
-  open: { combinations: boolean; finder: boolean; calculator: boolean };
+  open: { finder: boolean; calculator: boolean };
 }
 
 /**
@@ -133,13 +132,6 @@ export function Keypad(props: Props) {
         ))}
       </div>
       <div className="tools tools-right">
-        <Tool
-          icon="cageList"
-          label={T.combinations}
-          onClick={props.onCombinations}
-          enabled={!disabled}
-          pressed={open.combinations}
-        />
         <Tool
           icon="notepad"
           label={T.finder}
