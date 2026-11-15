@@ -10,6 +10,7 @@ import { TEXTS } from '../texts/fr';
 import { BANKS, findPuzzle, readExtraBank, registerExtraPuzzles } from './bank';
 import { applyAppearance, saveFile } from './data/appearance';
 import { backupFileName, buildBackup, parseBackup } from './data/backup';
+import { restoreExtraPuzzles } from './extras';
 import { libraryItems, type HistoryEntry, type LibraryItem } from './data/history';
 import { DEFAULT_SETTINGS, type Settings } from './data/settings';
 import { formatTime } from './game/clock';
@@ -23,7 +24,6 @@ import {
   addHistory,
   loadAll,
   loadCurrentId,
-  loadExtraPuzzles,
   loadFavorites,
   loadGames,
   loadHistory,
@@ -41,6 +41,7 @@ const H = TEXTS.home;
 
 type Screen =
   | { kind: 'loading' }
+  | { kind: 'error'; message: string }
   | { kind: 'home' }
   | { kind: 'library' }
   | { kind: 'stats' }
@@ -91,12 +92,17 @@ export function App() {
   useEffect(() => {
     void requestPersistence();
     void (async () => {
-      registerExtraPuzzles(await loadExtraPuzzles());
-      const loaded = await loadSettings();
-      applyAppearance(loaded);
-      setSettings(loaded);
-      setData(await loadData());
-      setScreen({ kind: 'home' });
+      try {
+        await restoreExtraPuzzles();
+        const loaded = await loadSettings();
+        applyAppearance(loaded);
+        setSettings(loaded);
+        setData(await loadData());
+        setScreen({ kind: 'home' });
+      } catch (error) {
+        // Sans cela, l'application resterait bloquée sur « Chargement… » sans rien expliquer.
+        setScreen({ kind: 'error', message: error instanceof Error ? error.message : String(error) });
+      }
     })();
   }, []);
 
@@ -193,7 +199,7 @@ export function App() {
       history: backup.history.length,
       apply: async () => {
         await replaceAll(backup);
-        registerExtraPuzzles(backup.extraPuzzles);
+        await restoreExtraPuzzles();
         const restored = await loadSettings();
         changeSettings(restored);
         setData(await loadData());
@@ -202,13 +208,25 @@ export function App() {
   };
 
   const importBank = async (text: string) => {
-    const { added, skipped } = readExtraBank(JSON.parse(text));
+    const { added, skipped, rejected } = readExtraBank(JSON.parse(text));
     await addExtraPuzzles(added);
     registerExtraPuzzles(added);
-    return { added: added.length, skipped };
+    return { added: added.length, skipped, rejected };
   };
 
   if (screen.kind === 'loading') return <p className="loading">{H.loading}</p>;
+
+  if (screen.kind === 'error') {
+    return (
+      <div className="home">
+        <h1>{TEXTS.appName}</h1>
+        <p className="notice">{H.startError(screen.message)}</p>
+        <button type="button" className="primary" onClick={() => window.location.reload()}>
+          {H.retry}
+        </button>
+      </div>
+    );
+  }
 
   if (screen.kind === 'stats') {
     return (

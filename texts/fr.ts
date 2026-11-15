@@ -13,6 +13,9 @@ export const TEXTS = {
     allPlayed: (level: string) =>
       `Toutes les grilles ${level} ont été jouées : voici celle que tu as terminée il y a le plus longtemps.`,
     loading: 'Chargement…',
+    startError: (message: string) =>
+      `Les données enregistrées n’ont pas pu être lues (${message}). Ferme complètement l’application, puis rouvre-la.`,
+    retry: 'Réessayer',
     legal: 'Projet personnel, non destiné à la diffusion. Tous droits réservés.',
     version: (app: string, engine: string) => `Version ${app} · moteur ${engine}`,
     library: 'Bibliothèque',
@@ -243,8 +246,10 @@ export const TEXTS = {
     bankHelp:
       'Ajoute des grilles depuis un fichier de banque. Les grilles déjà présentes ne sont jamais remplacées.',
     bankImport: 'Importer un fichier de banque',
-    bankDone: (added: number, skipped: number) =>
-      `${added} grille(s) ajoutée(s)${skipped ? `, ${skipped} déjà présente(s)` : ''}.`,
+    bankDone: (added: number, skipped: number, rejected: number) =>
+      `${added} grille(s) ajoutée(s)${skipped ? `, ${skipped} déjà présente(s)` : ''}${
+        rejected ? `, ${rejected} refusée(s) car elles ont plusieurs solutions` : ''
+      }.`,
     readError: (message: string) => `Fichier refusé : ${message}`,
     aboutTitle: 'À propos',
     gridsPerLevel: 'Grilles par niveau',

@@ -20,7 +20,7 @@ interface Props {
   onExport: () => Promise<void>;
   /** Lit un fichier de sauvegarde : renvoie de quoi demander confirmation, ou lève une erreur. */
   onReadBackup: (text: string) => { games: number; history: number; apply: () => Promise<void> };
-  onImportBank: (text: string) => Promise<{ added: number; skipped: number }>;
+  onImportBank: (text: string) => Promise<{ added: number; skipped: number; rejected: number }>;
   onBack: () => void;
 }
 
@@ -208,7 +208,7 @@ export function SettingsScreen(props: Props) {
               if (text === null) return;
               props
                 .onImportBank(text)
-                .then(({ added, skipped }) => setMessage(S.bankDone(added, skipped)), fail);
+                .then(({ added, skipped, rejected }) => setMessage(S.bankDone(added, skipped, rejected)), fail);
             }}
           />
         </Section>

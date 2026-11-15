@@ -12,7 +12,7 @@
  * automatiquement, sans rien perdre (migration).
  */
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { Level, PuzzleRecord } from '../engine/model';
+import { parsePuzzleRecord, type Level, type PuzzleRecord } from '../engine/model';
 import type { BackupData } from './data/backup';
 import type { HistoryEntry } from './data/history';
 import { DEFAULT_SETTINGS, parseSettings, type Settings } from './data/settings';
@@ -122,13 +122,57 @@ export async function setFavorite(puzzleId: string, favorite: boolean): Promise<
   else await database.delete('favorites', puzzleId);
 }
 
+/** Grilles importées. Chacune est revérifiée : une entrée abîmée est ignorée au lieu de bloquer le démarrage. */
 export async function loadExtraPuzzles(): Promise<PuzzleRecord[]> {
-  return (await db()).getAll('extraPuzzles');
+  return (await (await db()).getAll('extraPuzzles')).flatMap((raw) => {
+    try {
+      return [parsePuzzleRecord(raw)];
+    } catch {
+      return [];
+    }
+  });
 }
 
 export async function addExtraPuzzles(records: readonly PuzzleRecord[]): Promise<void> {
   const tx = (await db()).transaction('extraPuzzles', 'readwrite');
   await Promise.all([...records.map((r) => tx.store.put(r)), tx.done]);
+}
+
+/**
+ * Change l'identifiant de grilles importées, avec tout ce qui s'y rapporte (partie, historique, favori,
+ * dernière partie ouverte), en une seule opération : tout est fait, ou rien.
+ */
+export async function renamePuzzles(renames: ReadonlyMap<string, string>): Promise<void> {
+  if (renames.size === 0) return;
+  const stores = ['extraPuzzles', 'games', 'history', 'favorites', 'meta'] as const;
+  const tx = (await db()).transaction(stores, 'readwrite');
+  for (const [from, to] of renames) {
+    const extras = tx.objectStore('extraPuzzles');
+    const record = await extras.get(from);
+    if (record) {
+      await extras.delete(from);
+      await extras.put({ ...record, id: to });
+    }
+    const games = tx.objectStore('games');
+    const game = await games.get(from);
+    if (game) {
+      await games.delete(from);
+      await games.put({ ...game, puzzleId: to });
+    }
+    const favorites = tx.objectStore('favorites');
+    const favorite = await favorites.get(from);
+    if (favorite) {
+      await favorites.delete(from);
+      await favorites.put({ ...favorite, puzzleId: to });
+    }
+    const history = tx.objectStore('history');
+    for (const entry of await history.index('puzzleId').getAll(from)) {
+      await history.put({ ...entry, puzzleId: to });
+    }
+    const meta = tx.objectStore('meta');
+    if ((await meta.get('current')) === from) await meta.put(to, 'current');
+  }
+  await tx.done;
 }
 
 /** Tout ce qu'il faut pour un export de la sauvegarde. */

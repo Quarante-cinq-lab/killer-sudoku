@@ -4,7 +4,7 @@ import hardBank from '../../data/bank-hard.json';
 import { makeRecord, serializeBank } from '../../engine/bank';
 import { parseSolution } from '../../engine/model';
 import fixtures from '../../engine/__tests__/fixtures/killer-fixtures.json';
-import { readExtraBank } from '../bank';
+import { conflictingIds, IMPORT_PREFIX, readExtraBank } from '../bank';
 import { GAME_FORMAT, newGame } from '../game/state';
 import type { SavedGame } from '../storage';
 import { backupFileName, buildBackup, parseBackup, type BackupData } from './backup';
@@ -158,5 +158,43 @@ describe('import d’une banque complémentaire', () => {
 
   it('refuse un fichier qui n’est pas une banque', () => {
     expect(() => readExtraBank({ puzzles: 3 }, records)).toThrow();
+  });
+
+  it('refuse une grille qui a plusieurs solutions', () => {
+    const multiple = fixtures.fixtures.find((f) => f.expectedCount > 1);
+    if (!multiple) throw new Error('grille de test manquante');
+    const ambiguous = makeRecord('HARD', 902, { cages: multiple.cages }, parseSolution(multiple.solution), { score: 200, techniques: {}, entryPoints: 3 }, '2026-11-15');
+    const result = readExtraBank(file([ambiguous, fresh]), records);
+    expect(result.added.map((p) => p.id)).toEqual(['HRD-0900']);
+    expect(result.rejected).toBe(1);
+    expect(result.skipped).toBe(0);
+  });
+
+  it('donne un identifiant libre à une grille nouvelle dont le numéro est déjà pris', () => {
+    const sameNumber = { ...fresh, id: records[0].id, number: records[0].number };
+    const result = readExtraBank(file([sameNumber]), records);
+    expect(result.added.map((p) => p.id)).toEqual([`${IMPORT_PREFIX}${records[0].id}`]);
+    expect(result.added[0].cages).toEqual(fresh.cages);
+    expect(readExtraBank(file([sameNumber]), [...records, ...result.added]).skipped).toBe(1);
+  });
+});
+
+describe('grilles importées dont le numéro a été repris par la banque livrée', () => {
+  const fixture = fixtures.fixtures.find((f) => f.expectedCount === 1);
+  if (!fixture) throw new Error('grille de test manquante');
+  const imported = makeRecord('HARD', records[0].number, { cages: fixture.cages }, parseSolution(fixture.solution), { score: 200, techniques: {}, entryPoints: 3 }, '2026-11-15');
+
+  it('change l’identifiant de la grille importée, pas celui de la grille livrée', () => {
+    expect(imported.id).toBe(records[0].id);
+    expect(conflictingIds([imported], records)).toEqual(new Map([[records[0].id, `${IMPORT_PREFIX}${records[0].id}`]]));
+  });
+
+  it('ne change rien si c’est exactement la même grille, ou si le numéro est libre', () => {
+    expect(conflictingIds([{ ...records[0] }, { ...imported, id: 'HRD-0900', number: 900 }], records).size).toBe(0);
+  });
+
+  it('choisit un identifiant encore libre', () => {
+    const already = { ...records[1], id: `${IMPORT_PREFIX}${records[0].id}` };
+    expect(conflictingIds([imported, already], records).get(records[0].id)).toBe(`${IMPORT_PREFIX}2-${records[0].id}`);
   });
 });
