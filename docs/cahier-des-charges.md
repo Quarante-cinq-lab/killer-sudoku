@@ -237,7 +237,7 @@ Une cage virtuelle sert à noter une déduction du type « ces cases font X au t
    - si les cases de la cage virtuelle se voient toutes deux à deux (même ligne, colonne, bloc ou même cage : donc sans chiffre répété), leurs combinaisons étaient listées (fenêtre retirée le 15 novembre 2026) ;
    - sinon, elle affiche seulement la somme et le nombre de cases, et indique que des chiffres peuvent se répéter ;
    - le signalement des conflits vérifie aussi les cages virtuelles (somme dépassée, combinaison impossible).
-4. **Gestion** : une liste des cages virtuelles permet de les masquer, les afficher ou les supprimer. Elles sont sauvegardées avec la partie et effacées par « Recommencer la grille ».
+4. **Gestion** : retirée avec la fenêtre « Cages virtuelles » (retours d'essai du 15 novembre 2026). Les cages virtuelles existantes restent sauvegardées avec la partie et sont effacées par « Recommencer la grille ».
 5. Une cage virtuelle fausse (somme incompatible avec la solution) n'est jamais signalée comme fausse : c'est une note du joueur.
 
 **Menu Options (icône crayon)**
@@ -282,7 +282,7 @@ Le joueur veut savoir tout de suite qu'un chiffre est faux, pour repérer où so
    - sur l'écran « Partie perdue » ;
    - dans la bibliothèque, sur chaque grille.
 2. Une confirmation est demandée, sauf depuis l'écran « Partie perdue ».
-3. Effet : la grille est vidée (chiffres, notes, combinaisons barrées, cages virtuelles, historique d'annulation), le chronomètre repart à 00:00:00 et le compteur d'erreurs à 0.
+3. Effet : la grille est vidée (chiffres, notes, cages virtuelles, historique d'annulation), le chronomètre repart à 00:00:00 et le compteur d'erreurs à 0.
 4. La tentative précédente reste dans l'historique de la grille, marquée « abandonnée » (ou « perdue » si elle s'est arrêtée à 3 erreurs).
 
 ## 8. Bibliothèque et autres écrans
@@ -344,7 +344,7 @@ Les indices et les vérifications utilisés sont comptés dans l'historique. Une
 
 Tout est enregistré automatiquement, à chaque action, dans IndexedDB. On retrouve donc une partie exactement dans l'état où on l'a laissée.
 
-- **État sauvegardé pour chaque partie** : chiffres, notes et leur ordre de saisie, combinaisons barrées, cages virtuelles, historique d'annulation, temps écoulé.
+- **État sauvegardé pour chaque partie** : chiffres, notes et leur ordre de saisie, cages virtuelles, historique d'annulation, temps écoulé.
 - **État sauvegardé (complément E1)** : compteur d'erreurs, mode erreurs de la partie, partie perdue ou non.
 - **Historique par grille** : une ligne par partie, avec la date de début, la date de fin, la durée, le résultat (terminée, abandonnée, perdue), le nombre d'indices, de vérifications et d'erreurs, et le ressenti.
 - **Statistiques par niveau** : grilles terminées, temps moyen et médian, meilleur temps, pourcentage de parties sans indice, série en cours de parties sans indice, nombre de parties perdues, nombre moyen d'erreurs par partie terminée.
