@@ -30,7 +30,14 @@ const fixture = fixtures.fixtures.find((f) => f.expectedCount === 1);
 if (!fixture) throw new Error('grille de test manquante');
 const shipped = BANKS.HARD[0];
 /** Grille importée autrefois sous le numéro que la banque livrée utilise maintenant pour une autre grille. */
-const imported = makeRecord('HARD', shipped.number, { cages: fixture.cages }, parseSolution(fixture.solution), { score: 200, techniques: {}, entryPoints: 3 }, '2026-11-15');
+const imported = makeRecord(
+  'HARD',
+  shipped.number,
+  { cages: fixture.cages },
+  parseSolution(fixture.solution),
+  { score: 200, techniques: {}, entryPoints: 3 },
+  '2026-11-15',
+);
 const renamed = `${IMPORT_PREFIX}${shipped.id}`;
 
 const game = (puzzleId: string): SavedGame => ({

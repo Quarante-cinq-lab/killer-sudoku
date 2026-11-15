@@ -4,15 +4,15 @@
  * automatiquement, et de sauvegarder la partie telle quelle.
  *
  * Annuler/Rétablir : chaque action enregistre ce qu'elle a changé, « avant » et « après » : le contenu
- * des cases touchées et, si besoin, les combinaisons barrées et les cages virtuelles. L'historique n'a pas
- * de limite et il est sauvegardé avec la partie.
+ * des cases touchées (et, dans les parties anciennes, les cages virtuelles). L'historique n'a pas de limite
+ * et il est sauvegardé avec la partie.
  */
 import { digitBit, digitsOf } from '../../engine/bits';
 import { combinationsFor } from '../../engine/combinations';
 import { cageIndexByCell, CELL_COUNT, PEERS, type Puzzle } from '../../engine/model';
 
 /** Version du format de sauvegarde d'une partie (les anciennes sont converties par migrateGame). */
-export const GAME_FORMAT = 3;
+export const GAME_FORMAT = 4;
 
 /** Nombre d'erreurs qui arrête la partie quand le mode erreurs est actif (section 7.6). */
 export const MAX_ERRORS = 3;
@@ -32,23 +32,26 @@ export interface CellChange {
   after: CellContent;
 }
 
-/** Cage ajoutée par le joueur (section 7.4) : des cases et une somme qu'il a déduite. */
+/**
+ * Cage ajoutée par le joueur (section 7.4) : des cases et une somme qu'il a déduite. On ne peut plus en
+ * créer depuis les retours d'essai du 15 novembre 2026 ; celles des parties existantes restent dessinées
+ * et vérifiées.
+ */
 export interface VirtualCage {
   id: number;
   sum: number;
   cells: number[];
-  /** Masquée par le joueur : ni dessinée, ni utilisée par les combinaisons et les conflits. */
-  hidden?: boolean;
 }
 
-/** Ce qui n'est pas dans les cases : combinaisons barrées (par cage) et cages virtuelles. */
+/** Ce qui n'est pas dans les cases : les cages virtuelles. */
 export interface Extras {
-  /** Combinaisons barrées, par cage : clé « c<case de la somme> » ou « v<numéro de cage virtuelle> ». */
-  struck: Record<string, number[]>;
   virtualCages: VirtualCage[];
 }
 
-/** Une action annulable. */
+/**
+ * Une action annulable. `extras` n'existe que dans l'historique des parties anciennes (ajout ou suppression
+ * d'une cage virtuelle) : « Annuler » et « Rétablir » le rejouent toujours.
+ */
 export interface Change {
   cells: CellChange[];
   extras?: { before: Extras; after: Extras };
@@ -122,7 +125,6 @@ export function newGame(puzzleId: string, aids: Aids = DEFAULT_AIDS, errorMode =
     puzzleId,
     values: new Array<number>(CELL_COUNT).fill(0),
     notes: Array.from({ length: CELL_COUNT }, () => []),
-    struck: {},
     virtualCages: [],
     undo: [],
     redo: [],
@@ -137,22 +139,39 @@ export function newGame(puzzleId: string, aids: Aids = DEFAULT_AIDS, errorMode =
   };
 }
 
+/** Cages virtuelles d'une sauvegarde ancienne, sans le champ « masquée » (format 3) : toutes sont visibles. */
+const visibleCages = (cages: readonly VirtualCage[] | undefined): VirtualCage[] =>
+  (cages ?? []).map(({ id, sum, cells }) => ({ id, sum, cells }));
+
 /**
  * Convertit une partie sauvegardée par une version précédente de l'application (format 1 : historique
- * limité aux cases, pas d'aides ni de compteurs ; format 2 : pas de mode erreurs). Les champs inconnus
- * sont conservés. Une partie commencée avant le mode erreurs le garde désactivé, pour ne pas changer ses
- * règles en cours de route.
+ * limité aux cases, pas d'aides ni de compteurs ; format 2 : pas de mode erreurs ; format 3 : combinaisons
+ * barrées et cages virtuelles masquables, deux outils retirés le 15 novembre 2026). Les autres champs
+ * inconnus sont conservés. Une partie commencée avant le mode erreurs le garde désactivé, pour ne pas
+ * changer ses règles en cours de route. Une cage virtuelle masquée redevient visible, puisqu'on ne peut
+ * plus la réafficher.
  */
 export function migrateGame<T extends object>(saved: T): T & GameState {
-  const raw = saved as Partial<GameState> & { undo?: unknown[]; redo?: unknown[] };
+  const raw = saved as Partial<GameState> & { undo?: unknown[]; redo?: unknown[]; struck?: unknown };
   if (raw.version === GAME_FORMAT) return saved as T & GameState;
-  const toChange = (entry: unknown): Change =>
-    Array.isArray(entry) ? { cells: entry as CellChange[] } : (entry as Change);
+  const toChange = (entry: unknown): Change => {
+    const change = (Array.isArray(entry) ? { cells: entry } : entry) as Change;
+    if (!change.extras) return { cells: change.cells };
+    const { before, after } = change.extras;
+    return {
+      cells: change.cells,
+      extras: {
+        before: { virtualCages: visibleCages(before.virtualCages) },
+        after: { virtualCages: visibleCages(after.virtualCages) },
+      },
+    };
+  };
+  const { struck: _struck, ...rest } = raw;
+  void _struck;
   return {
-    ...saved,
+    ...rest,
     version: GAME_FORMAT,
-    struck: raw.struck ?? {},
-    virtualCages: raw.virtualCages ?? [],
+    virtualCages: visibleCages(raw.virtualCages),
     undo: (raw.undo ?? []).map(toChange),
     redo: (raw.redo ?? []).map(toChange),
     hints: raw.hints ?? 0,
@@ -177,11 +196,6 @@ const contentOf = (state: GameState, cell: number): CellContent => ({
 const sameContent = (a: CellContent, b: CellContent): boolean =>
   a.value === b.value && a.notes.length === b.notes.length && a.notes.every((n, i) => n === b.notes[i]);
 
-const extrasOf = (state: GameState): Extras => ({
-  struck: state.struck,
-  virtualCages: state.virtualCages,
-});
-
 /** Écrit des contenus de cases et, éventuellement, des « extras » dans une copie de l'état. */
 function write(state: GameState, cells: readonly CellChange[], side: 'before' | 'after', extras?: Extras) {
   const values = [...state.values];
@@ -194,15 +208,14 @@ function write(state: GameState, cells: readonly CellChange[], side: 'before' | 
 }
 
 /** Enregistre une action : seules les cases qui changent vraiment entrent dans l'historique. */
-function commit(state: GameState, contents: ReadonlyMap<number, CellContent>, extras?: Extras): GameState {
+function commit(state: GameState, contents: ReadonlyMap<number, CellContent>): GameState {
   const cells: CellChange[] = [];
   for (const [cell, after] of contents) {
     const before = contentOf(state, cell);
     if (!sameContent(before, after)) cells.push({ cell, before, after });
   }
-  if (cells.length === 0 && !extras) return state;
-  const change: Change = extras ? { cells, extras: { before: extrasOf(state), after: extras } } : { cells };
-  return { ...write(state, cells, 'after', extras), undo: [...state.undo, change], redo: [] };
+  if (cells.length === 0) return state;
+  return { ...write(state, cells, 'after'), undo: [...state.undo, { cells }], redo: [] };
 }
 
 /** Cases vues par une case : sa ligne, sa colonne, son bloc et sa cage. */
@@ -331,7 +344,7 @@ export function eraseCells(state: GameState, cells: readonly number[]): GameStat
   return commit(state, new Map(cells.map((c) => [c, { value: 0, notes: [] }])));
 }
 
-/** Vide toute la grille (annulable). Les cages virtuelles et combinaisons barrées restent. */
+/** Vide toute la grille (annulable). Les cages virtuelles restent. */
 export function eraseAll(state: GameState): GameState {
   return eraseCells(
     state,
@@ -370,36 +383,6 @@ export function fillAllNotes(state: GameState, puzzle: Puzzle): GameState {
     if (v === 0) contents.set(cell, { value: 0, notes: candidates(puzzle, state.values, cell) });
   });
   return commit(state, contents);
-}
-
-/** Copie des combinaisons barrées, sans celles d'une cage. */
-function withoutKey(struck: Record<string, number[]>, key: string): Record<string, number[]> {
-  return Object.fromEntries(Object.entries(struck).filter(([k]) => k !== key));
-}
-
-/** Barre ou rétablit une combinaison (masque de chiffres) dans la fenêtre des combinaisons d'une cage. */
-export function toggleCombination(state: GameState, key: string, combo: number): GameState {
-  if (isOver(state)) return state;
-  const current = state.struck[key] ?? [];
-  const next = current.includes(combo) ? current.filter((m) => m !== combo) : [...current, combo];
-  const struck = withoutKey(state.struck, key);
-  if (next.length > 0) struck[key] = next;
-  return commit(state, new Map(), { struck, virtualCages: state.virtualCages });
-}
-
-/** Ajoute une cage virtuelle (au moins une case, somme de 1 à 405). */
-export function addVirtualCage(state: GameState, cells: readonly number[], sum: number): GameState {
-  if (isOver(state) || cells.length === 0 || sum < 1 || sum > 405) return state;
-  const id = state.virtualCages.reduce((max, v) => Math.max(max, v.id), 0) + 1;
-  const cage: VirtualCage = { id, sum, cells: [...new Set(cells)].sort((a, b) => a - b) };
-  return commit(state, new Map(), { struck: state.struck, virtualCages: [...state.virtualCages, cage] });
-}
-
-/** Supprime une cage virtuelle (et les combinaisons barrées qui lui étaient associées). */
-export function removeVirtualCage(state: GameState, id: number): GameState {
-  if (isOver(state)) return state;
-  const struck = withoutKey(state.struck, `v${id}`);
-  return commit(state, new Map(), { struck, virtualCages: state.virtualCages.filter((v) => v.id !== id) });
 }
 
 export function canUndo(state: GameState): boolean {

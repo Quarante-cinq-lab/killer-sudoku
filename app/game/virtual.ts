@@ -16,7 +16,7 @@ export const VIRTUAL_COLORS = 6;
 export const virtualColor = (id: number): number => ((id - 1) % VIRTUAL_COLORS) + 1;
 
 /**
- * Cases en conflit à cause d'une cage virtuelle visible : les chiffres déjà posés dépassent la somme, ou
+ * Cases en conflit à cause d'une cage virtuelle : les chiffres déjà posés dépassent la somme, ou
  * ne permettent plus de l'atteindre (et, si ses cases se voient toutes, plus aucune combinaison possible).
  */
 export function virtualConflictCells(
@@ -26,7 +26,6 @@ export function virtualConflictCells(
 ): Set<number> {
   const result = new Set<number>();
   for (const cage of cages) {
-    if (cage.hidden) continue;
     const placed = cage.cells.filter((c) => values[c]);
     if (placed.length === 0) continue;
     const placedSum = placed.reduce((s, c) => s + values[c], 0);

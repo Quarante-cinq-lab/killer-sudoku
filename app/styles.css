@@ -22,7 +22,6 @@
   --shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 1px 1px rgb(0 0 0 / 6%);
   --unit-highlight: #eeedf5; /* ligne, colonne et bloc de la case sélectionnée */
   --same-digit: #cfd9f6;
-  --hint: #fff1b8;
   --error: #c62828;
   --error-fill: #fde2e2;
   --conflict: #b45309;
@@ -34,8 +33,6 @@
   --virtual-4: #2f6fde;
   --virtual-5: #6a7a12;
   --virtual-6: #8a4fd0;
-  --struck: #9a97a8;
-  --sum-fill: #e6dcfb; /* cages du mode Somme */
   /* Couleurs des niveaux dans les statistiques (palette validée pour les daltonismes). */
   --series-1: #2a78d6;
   --series-2: #eb6834;
@@ -69,7 +66,6 @@
     --shadow: 0 1px 2px rgb(0 0 0 / 40%);
     --unit-highlight: #25242e;
     --same-digit: #2c3a5c;
-    --hint: #4a4220;
     --error: #ff8a80;
     --error-fill: #4a2326;
     --conflict: #f0a050;
@@ -81,8 +77,6 @@
     --virtual-4: #7aa7ff;
     --virtual-5: #b5c95a;
     --virtual-6: #b892f0;
-    --struck: #77748a;
-    --sum-fill: #3a2f5c;
     --series-1: #3987e5;
     --series-2: #d95926;
     --series-3: #199e70;
@@ -115,7 +109,6 @@
   --shadow: 0 1px 2px rgb(0 0 0 / 40%);
   --unit-highlight: #25242e;
   --same-digit: #2c3a5c;
-  --hint: #4a4220;
   --error: #ff8a80;
   --error-fill: #4a2326;
   --conflict: #f0a050;
@@ -127,8 +120,6 @@
   --virtual-4: #7aa7ff;
   --virtual-5: #b5c95a;
   --virtual-6: #b892f0;
-  --struck: #77748a;
-  --sum-fill: #3a2f5c;
   --series-1: #3987e5;
   --series-2: #d95926;
   --series-3: #199e70;
@@ -475,19 +466,6 @@ button.secondary {
   --vc: var(--virtual-6);
 }
 
-.virtual-swatch {
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-  border: 3px dashed var(--vc);
-  flex: none;
-}
-
-.virtual-list li.hidden-cage span {
-  opacity: 0.45;
-  text-decoration: line-through;
-}
-
 .selected-fill {
   fill: var(--selected);
 }
@@ -748,11 +726,6 @@ button.secondary {
   color: var(--muted);
 }
 
-.combo-group h3 {
-  margin: 4px 0 8px;
-  font-size: 15px;
-}
-
 .combo-list {
   display: flex;
   flex-wrap: wrap;
@@ -778,14 +751,6 @@ button.secondary {
 
 .combo.greyed {
   opacity: 0.35;
-}
-
-.combo.struck {
-  color: var(--struck);
-  text-decoration: line-through;
-  text-decoration-thickness: 2px;
-  box-shadow: none;
-  background: transparent;
 }
 
 .calc-fields {
@@ -860,29 +825,6 @@ button.secondary {
   width: 100%;
   min-height: 48px;
   margin: 12px 0;
-}
-
-.virtual-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.virtual-list li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-}
-
-.virtual-list span {
-  flex: 1;
-}
-
-.virtual-list button {
-  min-height: 40px;
-  padding: 0 12px;
-  font-size: 15px;
 }
 
 /* ---------- Aides de la partie ---------- */

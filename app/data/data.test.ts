@@ -135,6 +135,15 @@ describe('export et import de la sauvegarde', () => {
     expect(parsed.games[0].version).toBe(GAME_FORMAT);
     expect(parsed.games[0].undo[0]).toEqual({ cells: [] });
   });
+
+  it('relit une sauvegarde exportée avant le retrait des combinaisons barrées (parties au format 3)', () => {
+    const cage = { id: 1, sum: 12, cells: [2, 3], hidden: true };
+    const old = { ...game(records[0].id), version: 3, struck: { c0: [3] }, virtualCages: [cage] } as unknown as SavedGame;
+    const parsed = parseBackup(JSON.parse(JSON.stringify(buildBackup({ ...data, games: [old] }, '0.14.0', 'x'))));
+    expect(parsed.games[0].version).toBe(GAME_FORMAT);
+    expect('struck' in parsed.games[0]).toBe(false);
+    expect(parsed.games[0].virtualCages).toEqual([{ id: 1, sum: 12, cells: [2, 3] }]);
+  });
 });
 
 describe('import d’une banque complémentaire', () => {

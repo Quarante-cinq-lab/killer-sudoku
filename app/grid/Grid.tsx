@@ -23,7 +23,7 @@ export interface GridMarks {
   conflicts: ReadonlySet<number>;
   /** Chiffres faux trouvés par la vérification. */
   wrong: ReadonlySet<number>;
-  virtualCages: readonly { id: number; sum: number; cells: readonly number[]; hidden?: boolean }[];
+  virtualCages: readonly { id: number; sum: number; cells: readonly number[] }[];
 }
 
 const VIRTUAL_INSET = 15;
@@ -182,37 +182,35 @@ function CellRects({
 function VirtualCages({ cages }: { cages: GridMarks['virtualCages'] }) {
   return (
     <>
-      {cages
-        .filter((cage) => !cage.hidden)
-        .map((cage) => {
-          const path = segmentsPath(
-            cageSegments({ cages: [{ sum: cage.sum, cells: [...cage.cells] }] }, 0, VIRTUAL_INSET),
-          );
-          const anchor = Math.min(...cage.cells);
-          const x = colOf(anchor) * CELL;
-          const y = rowOf(anchor) * CELL;
-          const width = String(cage.sum).length * SUM_FONT * 0.6 + 6;
-          return (
-            <g key={cage.id} className={`virtual-color-${virtualColor(cage.id)}`}>
-              <path d={path} className="virtual-cage-line" />
-              <rect
-                x={x + VIRTUAL_INSET + 2}
-                y={y + CELL - VIRTUAL_INSET - SUM_FONT - 3}
-                width={width}
-                height={SUM_FONT + 2}
-                className="virtual-sum-bg"
-              />
-              <text
-                x={x + VIRTUAL_INSET + 5}
-                y={y + CELL - VIRTUAL_INSET - 5}
-                fontSize={SUM_FONT}
-                className="virtual-sum"
-              >
-                {cage.sum}
-              </text>
-            </g>
-          );
-        })}
+      {cages.map((cage) => {
+        const path = segmentsPath(
+          cageSegments({ cages: [{ sum: cage.sum, cells: [...cage.cells] }] }, 0, VIRTUAL_INSET),
+        );
+        const anchor = Math.min(...cage.cells);
+        const x = colOf(anchor) * CELL;
+        const y = rowOf(anchor) * CELL;
+        const width = String(cage.sum).length * SUM_FONT * 0.6 + 6;
+        return (
+          <g key={cage.id} className={`virtual-color-${virtualColor(cage.id)}`}>
+            <path d={path} className="virtual-cage-line" />
+            <rect
+              x={x + VIRTUAL_INSET + 2}
+              y={y + CELL - VIRTUAL_INSET - SUM_FONT - 3}
+              width={width}
+              height={SUM_FONT + 2}
+              className="virtual-sum-bg"
+            />
+            <text
+              x={x + VIRTUAL_INSET + 5}
+              y={y + CELL - VIRTUAL_INSET - 5}
+              fontSize={SUM_FONT}
+              className="virtual-sum"
+            >
+              {cage.sum}
+            </text>
+          </g>
+        );
+      })}
     </>
   );
 }

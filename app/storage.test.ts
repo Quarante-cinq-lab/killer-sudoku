@@ -14,7 +14,6 @@ import {
   loadAll,
   loadCurrentId,
   loadFavorites,
-  loadGame,
   loadGames,
   loadHistory,
   loadSettings,
@@ -51,7 +50,7 @@ describe('base de données', () => {
     await saveGame(g);
     await saveCurrentId('HRD-0001');
     await closeDb();
-    expect(await loadGame('HRD-0001')).toEqual(g);
+    expect(await loadGames()).toEqual([g]);
     expect(await loadCurrentId()).toBe('HRD-0001');
   });
 

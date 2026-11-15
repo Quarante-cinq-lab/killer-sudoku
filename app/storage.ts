@@ -70,11 +70,6 @@ export async function loadGames(): Promise<SavedGame[]> {
   return (await (await db()).getAll('games')).map(migrateGame);
 }
 
-export async function loadGame(puzzleId: string): Promise<SavedGame | null> {
-  const game = await (await db()).get('games', puzzleId);
-  return game ? migrateGame(game) : null;
-}
-
 export async function saveGame(game: SavedGame): Promise<void> {
   await (await db()).put('games', game);
 }

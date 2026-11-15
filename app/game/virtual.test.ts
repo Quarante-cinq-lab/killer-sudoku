@@ -40,11 +40,7 @@ describe('conflits des cages virtuelles', () => {
     expect(virtualConflictCells(record, values, [scattered]).size).toBe(3);
   });
 
-  it('une cage masquée n’est pas vérifiée, et n’est jamais comparée à la solution', () => {
-    const values = empty();
-    values[0] = 9;
-    values[1] = 8;
-    expect(virtualConflictCells(record, values, [{ ...row, hidden: true }]).size).toBe(0);
+  it('une cage virtuelle n’est jamais comparée à la solution', () => {
     // Une cage virtuelle fausse mais sans contradiction avec les chiffres posés n'est pas signalée.
     const wrongSum: VirtualCage = { id: 3, sum: sumOf([0, 1]) + 1, cells: [0, 1] };
     expect(virtualConflictCells(record, empty(), [wrongSum]).size).toBe(0);

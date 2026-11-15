@@ -5,7 +5,6 @@ import { parseSolution } from '../../engine/model';
 import hardBank from '../../data/bank-hard.json';
 import { levelStats, libraryItems, type HistoryEntry } from '../data/history';
 import {
-  addVirtualCage,
   canRedo,
   canUndo,
   eraseCells,
@@ -17,7 +16,6 @@ import {
   newGame,
   redo,
   setDigit,
-  toggleCombination,
   toggleNote,
   undo,
   wrongDigits,
@@ -98,16 +96,14 @@ describe('limite de 3 erreurs', () => {
 });
 
 describe('recommencer la grille', () => {
-  it('une nouvelle partie repart de zéro : chiffres, notes, cages virtuelles, combinaisons, erreurs', () => {
+  it('une nouvelle partie repart de zéro : chiffres, notes, cages virtuelles, erreurs', () => {
     let s = put(fresh(), [1], wrong(1));
     s = toggleNote(s, [2], 4);
-    s = addVirtualCage(s, [3, 4], 9);
-    s = toggleCombination(s, 'c0', 3);
+    s = { ...s, virtualCages: [{ id: 1, sum: 9, cells: [3, 4] }] }; // cage d'une partie ancienne
     const restarted = newGame(s.puzzleId, s.aids, true);
     expect(restarted.values.every((v) => v === 0)).toBe(true);
     expect(restarted.notes.every((n) => n.length === 0)).toBe(true);
     expect(restarted.virtualCages).toEqual([]);
-    expect(restarted.struck).toEqual({});
     expect(restarted.undo).toEqual([]);
     expect(restarted.errors).toBe(0);
     expect(restarted.lost).toBe(false);

@@ -4,16 +4,13 @@ import { parseSolution } from '../../engine/model';
 import hardBank from '../../data/bank-hard.json';
 import { allDistinct, finderLines, conflictCells, contradicts, unitCells, wrongCells } from './aids';
 import {
-  addVirtualCage,
   GAME_FORMAT,
   DEFAULT_AIDS,
   migrateGame,
   newGame,
   PURIST_AIDS,
-  removeVirtualCage,
   setAids,
   setDigit,
-  toggleCombination,
   toggleNote,
   undo,
   redo,
@@ -91,15 +88,6 @@ describe('combinaisons', () => {
     expect(contradicts([1, 3, 9], [1, 2], values)).toBe(false); // la case 0 n'est pas concernée
   });
 
-  it('barrer une combinaison est mémorisé par cage et s’annule', () => {
-    let s = toggleCombination(fresh(), 'c0', 0b11);
-    expect(s.struck).toEqual({ c0: [0b11] });
-    s = toggleCombination(s, 'c0', 0b101);
-    expect(undo(s).struck).toEqual({ c0: [0b11] });
-    expect(redo(undo(s)).struck).toEqual({ c0: [0b11, 0b101] });
-    expect(toggleCombination(toggleCombination(fresh(), 'c0', 3), 'c0', 3).struck).toEqual({});
-  });
-
   it('calculatrice : 25 en 4 cases, avec un chiffre obligatoire et un exclu', () => {
     expect(finderLines(25, 4, 0, 0)).toHaveLength(6);
     expect(finderLines(25, 4, 1 << 8, 1 << 0)).toEqual(
@@ -110,15 +98,48 @@ describe('combinaisons', () => {
 });
 
 describe('cages virtuelles', () => {
-  it('s’ajoutent et se suppriment, le tout annulable', () => {
-    let s = addVirtualCage(fresh(), [3, 2], 12);
-    expect(s.virtualCages).toEqual([{ id: 1, sum: 12, cells: [2, 3] }]);
-    s = toggleCombination(s, 'v1', 0b100001);
-    s = removeVirtualCage(s, 1);
-    expect(s.virtualCages).toEqual([]);
-    expect(s.struck.v1).toBeUndefined();
-    expect(undo(s).virtualCages).toHaveLength(1);
-    expect(addVirtualCage(fresh(), [], 5)).toEqual(fresh());
+  it('une partie au format 3 se charge : cages gardées et visibles, combinaisons barrées oubliées', () => {
+    const cage = { id: 1, sum: 12, cells: [2, 3] };
+    const hidden = { id: 2, sum: 9, cells: [4, 5], hidden: true };
+    const write = { cell: 0, before: { value: 0, notes: [] }, after: { value: 3, notes: [] } };
+    const old = {
+      ...fresh(),
+      version: 3,
+      level: 'HARD',
+      struck: { c0: [0b11], v1: [0b100001] },
+      virtualCages: [cage, hidden],
+      undo: [
+        {
+          cells: [],
+          extras: {
+            before: { struck: {}, virtualCages: [cage] },
+            after: { struck: {}, virtualCages: [cage, hidden] },
+          },
+        },
+        {
+          cells: [],
+          extras: {
+            before: { struck: {}, virtualCages: [cage, hidden] },
+            after: { struck: { c0: [0b11] }, virtualCages: [cage, hidden] },
+          },
+        },
+        { cells: [write] },
+      ],
+      redo: [],
+    };
+    const game = migrateGame(old);
+    expect(game.version).toBe(GAME_FORMAT);
+    expect(game.level).toBe('HARD');
+    expect('struck' in game).toBe(false);
+    expect(game.virtualCages).toEqual([cage, { id: 2, sum: 9, cells: [4, 5] }]);
+    expect(game.undo[2]).toEqual({ cells: [write] });
+    expect(JSON.stringify(game.undo)).not.toMatch(/struck|hidden/);
+    // « Annuler » rejoue toujours l'historique ancien, cages virtuelles comprises.
+    const back = undo(undo(undo(game)));
+    expect(back.values[0]).toBe(0);
+    expect(back.virtualCages).toEqual([cage]);
+    expect(redo(redo(redo(back))).virtualCages).toHaveLength(2);
+    expect(migrateGame(game)).toBe(game);
   });
 
   it('détecte si les chiffres d’un groupe de cases sont forcément différents', () => {

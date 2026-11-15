@@ -74,8 +74,6 @@ export const TEXTS = {
     },
     purist: 'Préréglage Puriste',
     allAids: 'Tout réactiver',
-    on: 'Activée',
-    off: 'Désactivée',
     noCombination: 'Aucune combinaison.',
     finderTitle: 'Combinaisons',
     calculatorTitle: 'Calculatrice',
